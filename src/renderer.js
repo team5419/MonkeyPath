@@ -1,12 +1,28 @@
 /* eslint-disable */
 const $ = window.$ = window.jQuery = require('jQuery');
 require('jquery-ui-dist/jquery-ui');
-const PathGen = require('./PathGen.js');
+//const PathGen = require('./PathGen.js');
 const Translation2d = require('./Translation2d.js');
 const Rotation2d = require('./Rotation2d.js');
 const Pose2d = require('./Pose2d.js');
 
+class Waypoint extends Translation2d{
+  constructor(x,y,handle1,handle2) {
+    super(x,y);
+    this.handle1 = handle1;
+    handle1.waypoint = this;
+    if(handle2){
+      this.handle2 = handle2;
+      handle2.waypoint = this;
+    }
+  };
+}
+
+class Handle extends Translation2d{}
+  
+
 let waypoints = [];
+let handles = [];
 let splinePoints = [];
 let movePoints = [];
 let ctx;
@@ -25,8 +41,12 @@ const robotWidth = 22.01; // inches
 const robotHeight = 27.47; // inches
 
 const waypointRadius = 7;
+const handleRadius = 5;
 const splineWidth = 2;
 const pi = Math.PI;
+
+let handle;
+let offSet = 1;
 
 /**
  * Converts coordinates relative to the full picture to coordinates relative to field
@@ -112,8 +132,9 @@ function drawRobot(position, heading) {
   const angles = [h + (pi / 2) + t, h - (pi / 2) + t, h + (pi / 2) - t, h - (pi / 2) - t];
   const points = [];
   angles.forEach((angle) => {
-    const point = new Translation2d(position.translation.x + (r * Math.cos(angle)),
-      position.translation.y + (r * Math.sin(angle)));
+    const point = new Translation2d(
+      position.x + (r * Math.cos(angle)),
+      position.y + (r * Math.sin(angle)));
     points.push(point);
     point.draw(Math.abs(angle - heading) < pi / 2 ? '#00AAFF' : '#0066FF', splineWidth, ctx);
   });
@@ -201,8 +222,16 @@ function drawSplines(fill, animate) {
 function drawWaypoints() {
   waypoints.forEach((waypoint) => {
     waypoint.draw(true, waypointRadius, ctx);
-    drawRobot(waypoint, waypoint.rotation.getRadians());
+    //drawRobot(waypoint, waypoint.rotation.getRadians());
+    drawRobot(waypoint, 0);
   });
+  handles.forEach((handle) => {
+    handle.draw(true, handleRadius, ctx);
+    ctx.beginPath()
+    ctx.moveTo(handle.x, handle.y);
+    ctx.lineTo(handle.x, handle.y);
+    ctx.stroke()
+  })
 }
 
 /**
@@ -216,32 +245,13 @@ function update() {
   if (animating) {
     return;
   }
-
-  waypoints = [];
-  $('tbody').children('tr').each(function () {
-    const x = parseInt($($($(this).children()).children()[0]).val());
-    const y = parseInt($($($(this).children()).children()[1]).val());
-    let heading = parseInt($($($(this).children()).children()[2]).val());
-    if (isNaN(heading)) {
-      heading = 0;
-    }
-    const comment = ($($($(this).children()).children()[3]).val());
-    const enabled = ($($($(this).children()).children()[4]).prop('checked'));
-    if (enabled) {
-      waypoints.push(new Pose2d(new Translation2d(x, y), Rotation2d.fromDegrees(heading), comment));
-    }
-  });
-
   draw(1);
-
   splinePoints = [];
-  splinePoints = PathGen.generatePath(waypoints);
+  //splinePoints = PathGen.generatePath(waypoints);
   var printSpline = [];
   for (i = 1; i <= splinePoints.length - 1; i++) {
     printSpline.push(splinePoints[i].getTranslation);
   }
-  console.log('generated path');
-  console.log(printSpline);
 
   splinePoints.pop();
 
@@ -272,6 +282,12 @@ function init() {
   const field = $('#field');
   const background = $('#background');
   const canvases = $('#canvases');
+
+  field.mousedown((e) => {handleMouseDown(e)});
+  field.mousemove((e) => {handleMouseMove(e)});
+  field.mouseup((e) => {handleMouseUp(e)});
+  field.mouseout((e) => {handleMouseOut(e)});
+
   const widthString = `${width / 1.5}px`;
   const heightString = `${height / 1.5}px`;
 
@@ -333,22 +349,71 @@ function clear() {
  */
 
 function addPoint() {
-  let prev;
-  if (waypoints.length > 0) prev = waypoints[waypoints.length - 1].translation;
-  else prev = new Translation2d(20, 20);
-  var newFieldCoords = getFullCoords(prev.x + 50, prev.y + 50);
+  let prev, waypoint;
+  if (waypoints.length > 0) { 
+    prev = waypoints[waypoints.length - 1];
+    waypoint = new Waypoint(
+      prev.x + 50, 
+      prev.y + 50, 
+      new Handle(prev.x + 75, prev.y + 75),
+      new Handle(prev.x + 25, prev.y + 25));
+    waypoints.push(waypoint);
+    handles.push(waypoint.handle1);
+    handles.push(waypoint.handle2);
+  }
+  else {
+    waypoint = new Waypoint(20, 20, new Handle(30, 30));
+    waypoints.push(waypoint);
+    handles.push(waypoint.handle1);
+  }
 
-  $('#canvases').append(`${"<span class = 'dot' style={left: " +
-  newFieldCoords[0] + "; top: " +
-  newFieldCoords[1] +  ">" + "</span>"}`);
+  // var newFieldCoords = getFullCoords(prev.x + 50, prev.y + 50);
+  // $('#canvases').append(`${"<span class = 'dot' style={left: " +
+  //   newFieldCoords[0] + "; top: " +
+  //   newFieldCoords[1] +  ">" + "</span>"}`);
+
+  console.log(waypoint)
 
   $('tbody').append(`${'<tr>' + "<td class='drag_handler'></td>"
-        + "<td class='x'><input type='number' value='"}${prev.x + 50}'></td>`
-        + `<td class='y'><input type='number' value='${prev.y + 50}'></td>`
-        + '<td class=\'heading\'><input type=\'number\' value=\'0\'></td>'
-        + '<td class=\'comments\'><input type=\'search\' placeholder=\'Comments\'></td>'
+        + "<td class='x'><input type='number' value='"}${waypoint.x}'></td>`
+        + `<td class='y'><input type='number' value='${waypoint.y}'></td>`
+        + '<td class=\'handles\'>placeholder</td>'
         + '<td class=\'enabled\'><input type=\'checkbox\' checked></td>'
         + '<td class=\'delete\'><button onclick=\'$(this).parent().parent().remove();update()\'>&times;</button></td></tr>');
   update();
   rebind();
 }
+
+function render(){
+  feild.clearRect(0,0,fieldHeight,fieldWidth);
+  
+}
+
+function handleMouseDown(e){
+  coords = getFieldCoords(e.clientX, e.clientY);
+  x = coords[0];
+  y = coords[1];
+  console.log('mouse down', handles)
+  handles.forEach((tHandle) => {
+    console.log(tHandle,x,y, Math.sqrt((tHandle.x - x)**2 + (tHandle.y - y)**2));
+    if (Math.sqrt((i.x - x)**2 + (i.y - y)**2) < offSet){
+      handle = i;
+      console.log('found handle', handle);
+    }
+  })
+}
+
+function handleMouseMove(x,y){
+  if(handle){
+    console.log('move handle')
+    handle.x = x;
+    handle.y = y;
+    update()
+  }
+}
+
+function handleMouseUp(){ handle = undefined; }
+
+function handleMouseOut(){ handleMouseUp(); }
+
+$(document).ready(init);

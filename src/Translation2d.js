@@ -91,4 +91,4 @@ class Translation2d {
   }
 }
 
-module.exports = Translation2d;
+module.exports = Translation2d
