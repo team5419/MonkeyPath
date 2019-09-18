@@ -352,3 +352,6 @@ function addPoint() {
   update();
   rebind();
 }
+
+
+$(window).ready(init);
