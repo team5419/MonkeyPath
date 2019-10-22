@@ -6,23 +6,23 @@ const Translation2d = require('./Translation2d.js');
 const Rotation2d = require('./Rotation2d.js');
 const Pose2d = require('./Pose2d.js');
 
-class Waypoint extends Translation2d{
-  constructor(x,y,handle1,handle2) {
-    super(x,y);
-    this.handle1 = handle1;
-    handle1.waypoint = this;
-    if(handle2){
-      this.handle2 = handle2;
-      handle2.waypoint = this;
-    }
-  };
-}
+// class Waypoint extends Pose2d{
+//   constructor(x,y,handle1,handle2) {
+//     super(x,y);
+//     this.handle1 = handle1;
+//     handle1.waypoint = this;
+//     if(handle2){
+//       this.handle2 = handle2;
+//       handle2.waypoint = this;
+//     }
+//   };
+// }
 
-class Handle extends Translation2d{}
+// class Handle extends Translation2d{}
   
 
 let waypoints = [];
-let handles = [];
+// let handles = [];
 let splinePoints = [];
 let movePoints = [];
 let ctx;
@@ -221,8 +221,8 @@ function drawSplines(fill, animate) {
 
 function drawWaypoints() {
   waypoints.forEach((waypoint) => {
-    waypoint.draw(true, waypointRadius, ctx);
-    //drawRobot(waypoint, waypoint.rotation.getRadians());
+    //waypoint.draw(true, waypointRadius, ctx);
+    drawRobot(waypoint, waypoint.rotation.getRadians());
     drawRobot(waypoint, 0);
   });
   handles.forEach((handle) => {
@@ -318,6 +318,8 @@ function init() {
   imageFlipped = new Image();
   imageFlipped.src = 'img/fieldFlipped.png';
   rebind();
+
+  addPoint()
 }
 
 let flipped = false;
@@ -350,22 +352,27 @@ function clear() {
 
 function addPoint() {
   let prev, waypoint;
-  if (waypoints.length > 0) { 
-    prev = waypoints[waypoints.length - 1];
-    waypoint = new Waypoint(
-      prev.x + 50, 
-      prev.y + 50, 
-      new Handle(prev.x + 75, prev.y + 75),
-      new Handle(prev.x + 25, prev.y + 25));
-    waypoints.push(waypoint);
-    handles.push(waypoint.handle1);
-    handles.push(waypoint.handle2);
-  }
-  else {
-    waypoint = new Waypoint(20, 20, new Handle(30, 30));
-    waypoints.push(waypoint);
-    handles.push(waypoint.handle1);
-  }
+  if (waypoints.length > 0) prev = waypoints[waypointss.length-1];
+  else prev = new Translation2d(20,20);
+
+  waypoints.push(new Pose2d(new Translation2d(prev.x + 50, prev.x + 50), new Rotation2d()));
+
+  // if (waypoints.length > 0) { 
+  //   prev = waypoints[waypoints.length - 1];
+  //   waypoint = new Waypoint(
+  //     prev.x + 50, 
+  //     prev.y + 50, 
+  //     new Handle(prev.x + 75, prev.y + 75),
+  //     new Handle(prev.x + 25, prev.y + 25));
+  //   waypoints.push(waypoint);
+  //   handles.push(waypoint.handle1);
+  //   handles.push(waypoint.handle2);
+  // }
+  // else {
+  //   waypoint = new Waypoint(20, 20, new Handle(30, 30));
+  //   waypoints.push(waypoint);
+  //   handles.push(waypoint.handle1);
+  // }
 
   // var newFieldCoords = getFullCoords(prev.x + 50, prev.y + 50);
   // $('#canvases').append(`${"<span class = 'dot' style={left: " +
@@ -377,16 +384,12 @@ function addPoint() {
   $('tbody').append(`${'<tr>' + "<td class='drag_handler'></td>"
         + "<td class='x'><input type='number' value='"}${waypoint.x}'></td>`
         + `<td class='y'><input type='number' value='${waypoint.y}'></td>`
-        + '<td class=\'handles\'>placeholder</td>'
+        + `<td class='heading'><input type='number' value='${90}'></td>`
+        // + '<td class=\'handles\'>placeholder</td>'
         + '<td class=\'enabled\'><input type=\'checkbox\' checked></td>'
         + '<td class=\'delete\'><button onclick=\'$(this).parent().parent().remove();update()\'>&times;</button></td></tr>');
   update();
   rebind();
-}
-
-function render(){
-  feild.clearRect(0,0,fieldHeight,fieldWidth);
-  
 }
 
 function handleMouseDown(e){
