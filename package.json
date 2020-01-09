@@ -8,7 +8,7 @@
       "makers": [
         {
           "config": {
-            "name": "MonkeyPath"
+            "name": "Fracture"
           },
           "name": "@electron-forge/maker-squirrel"
         },
