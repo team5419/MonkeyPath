@@ -12,7 +12,9 @@ let mainWindow;
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1100, height: 500, frame: true, icon: `${__dirname}/img/logo.ico`,
+    width: 1100, height: 500, frame: true, icon: `${__dirname}/img/logo.ico`, webPreferences: {
+      nodeIntegration: true
+    }
   });
   mainWindow.maximize();
   // and load the index.html of the app.

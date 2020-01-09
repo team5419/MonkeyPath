@@ -355,3 +355,4 @@ function addPoint() {
 
 
 $(window).ready(init);
+log("test");
