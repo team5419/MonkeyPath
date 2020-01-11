@@ -1,6 +1,10 @@
 import { TouchBarScrubber } from "electron";
 const Vector2d = require('./Vector2d');
 
+/**
+ * Represents a Quintic Hermite Spline
+ * (I was asked to blindly port this code from Kotlin. I have no idea how it works or how to document it. -Sam)
+ */
 class QuinticHermiteSpline {
   constructor(x0, x1, dx0, dx1, ddx0, ddx1, y0, y1, dy0, dy1, ddy0, ddy1) {
     this.x0 = x0;
@@ -59,4 +63,64 @@ class QuinticHermiteSpline {
     let y = this.ay * this.t * this.t * this.t * this.t * this.t + this.by * this.t * this.t * this.t * this.t + this.cy * this.t * this.t * this.t + this.dy * this.t * this.t + this.ey * this.t + this.fy;
     return new Vector2d(x, y);
   }
+
+  __dx(t) {
+    return 5 * this._ax * t * t * t * t + 4 * this._bx * t * t * t + 3 * this._cx * t * t + 2 * this._dx * t + this._ex;
+  }
+
+  __dy(t) {
+    return 5 * this._ay * t * t * t * t + 4 * this._by * t * t * t + 3 * this._cy * t * t + 2 * this._dy * t + this._ey;
+  }
+
+  __ddx(t) {
+    return 20 * this._ax * t * t * t + 12 * this._bx * t * t + 6 * this._cx * t + 2 * this._dx
+  }
+
+  __ddy(t) {
+    return 20 * this._ay * t * t * t + 12 * this._by * t * t + 6 * this._cy * t + 2 * this._dy
+  }
+
+  __dddx(t) {
+    return 60 * this._ax * t * t + 24 * this._bx * t + 6 * this._cx;
+  }
+
+  __dddy(t) {
+    return 60 * this._ay * t * t + 24 * this._by * t + 6 * this._cy;
+  }
+
+  /**
+   * Get the velocity at a point on the spline.
+   * @param {number} t Point along spline.
+   */
+  getVelocity(t) {
+    return Math.hypot(this.__dx(t), this.__dy(t));
+  }
+
+  /**
+   * Get the curvature at a point on the spline.
+   * @param {number} t  Point along spline.
+   */
+  getCurvature(t) {
+    let temp = this.__dx(t) * this.__ddy(t) - this.__ddx(t) * this.__dy(t)
+    temp /= ((this.__dx(t) * this.__dx(t) + this.__dy(t) * __dy(t)) * Math.sqrt((this.__dx(t) * this.__dx(t) + this.__dy(t) * this.__dy(t))));
+    return temp;
+  }
+
+  /**
+   * 
+   * @param {number} t 
+   */
+  getDCurvature(t) {
+    let dx2dy2 = (this.__dx(t) * this.__dx(t) + this.__dy(t) * this.__dy(t));
+    let num = (this.__dx(t) * this.__dddy(t) - this.__dddx(t) * this.__dy(t)) * dx2dy2 - 3 * (this.__dx(t) * this.__ddy(t) - this.__ddx(t) * this.__dy(t)) * (this.__dx(t) * this.__ddx(t) + this.__dy(t) * this.__ddy(t));
+    return num / (dx2dy2 * dx2dy2 * Math.sqrt(dx2dy2));
+  }
+
+  dCurvature2(t) {
+    let dx2dy2 = (this.__dx(t) * this.__dx(t) + this.__dy(t) * this.__dy(t));
+    let num = (this.__dx(t) * this.__dddy(t) - this.__dddx(t) * this.__dy(t)) * dx2dy2 - 3 * (this.__dx(t) * this.__ddy(t) - this.__ddx(t) * this.__dy(t)) * (this.__dx(t) * this.__ddx(t) + this.__dy(t) * this.__ddy(t));
+    return num * num / (dx2dy2 * dx2dy2 * dx2dy2 * dx2dy2 * dx2dy2);
+  }
+
+  // getHeading()
 }
