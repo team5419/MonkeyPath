@@ -1,0 +1,1 @@
+export const kEpsilon = 1E-9;

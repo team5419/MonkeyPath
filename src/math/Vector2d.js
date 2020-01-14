@@ -68,6 +68,14 @@ class Vector2d {
   distanceTo(other) {
     return this.subtract(this, other).length;
   }
+
+  toCSV() {
+    return `${x}, ${y}`
+  }
+
+  toString() {
+    return this.toCSV();
+  }
 }
 
 module.exports = Vector2d;
