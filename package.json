@@ -33,11 +33,9 @@
   "dependencies": {
     "chart.js": "^2.7.3",
     "electron-squirrel-startup": "^1.0.0",
-    "java": "^0.11.0",
     "jquery": "^3.3.1",
     "jquery-ui": "^1.12.1",
-    "jquery-ui-dist": "^1.12.1",
-    "node-java-maven": "^0.1.1"
+    "jquery-ui-dist": "^1.12.1"
   },
   "description": "Spline generator for monkeys.",
   "devDependencies": {
@@ -61,33 +59,6 @@
     "**/js/jquery-ui.min.js",
     "**/js/jquery.min.js"
   ],
-  "java": {
-    "dependencies": [
-      {
-        "artifactId": "monkey-lib",
-        "groupId": "org.team5499",
-        "version": "2.2.1"
-      }
-    ],
-    "repositories": [
-      {
-        "id": "team5499",
-        "url": "https://maven.team5499.org/"
-      },
-      {
-        "id": "ctre",
-        "url": "http://devsite.ctr-electronics.com/maven/release/"
-      },
-      {
-        "id": "wpilib",
-        "url": "https://repo1.maven.org/maven2/"
-      },
-      {
-        "id": "wpilib2",
-        "url": "http://first.wpi.edu/FRC/roborio/maven/release/"
-      }
-    ]
-  },
   "keywords": [],
   "license": "MIT",
   "main": "src/index.js",
