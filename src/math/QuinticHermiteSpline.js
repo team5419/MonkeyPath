@@ -1,4 +1,5 @@
 import { TouchBarScrubber } from "electron";
+import { kEpsilon } from "constants";
 const Vector2d = require('./Vector2d');
 
 /**
@@ -6,121 +7,208 @@ const Vector2d = require('./Vector2d');
  * (I was asked to blindly port this code from Kotlin. I have no idea how it works or how to document it. -Sam)
  */
 class QuinticHermiteSpline {
-  constructor(x0, x1, dx0, dx1, ddx0, ddx1, y0, y1, dy0, dy1, ddy0, ddy1) {
-    this.x0 = x0;
-    this.x1 = x1;
-    this.dx0 = dx0;
-    this.dx1 = dx1;
-    this.ddx0 = ddx0;
-    this.ddx1 = ddx1;
-    this.y0 = y0;
-    this.y1 = y1;
-    this.dy0 = dy0;
-    this.dy1 = dy1;
-    this.ddy0 = ddy0;
-    this.ddy1 = ddy1;
+    /**
+     * Create a spline from vectors and rotations.
+     * @param {Vector2d} p0 Start vector.
+     * @param {Vector2d} p1 End vector.
+     * @param {number} h0 Start rotation (radians).
+     * @param {number} h1 End rotation (radians).
+     */
+    constructor(p0, p1, h0, h1) {
+        const scale = 1.2 * p0.distance(p1);
 
-    this._ax = 0;
-    this._bx = 0;
-    this._cx = 0;
-    this._dx = 0;
-    this._ex = 0;
-    this._fx = 0;
+        const x0 = p0.x;
+        const x1 = p1.x;
+        const dx0 = Math.cos(h0) * scale;
+        const dx1 = Math.cos(h1) * scale;
+        const ddx0 = 0;
+        const ddx1 = 0;
 
-    this._ay = 0;
-    this._by = 0;
-    this._cy = 0;
-    this._dy = 0;
-    this._ey = 0;
-    this._fy = 0;
+        const y0 = p0.y;
+        const y1 = p1.y;
+        const dy0 = Math.sin(h0) * scale;
+        const dy1 = Math.sin(h1) * scale;
+        const ddy0 = 0;
+        const ddy1 = 0;
 
-    this.calcCoeffs();
-  }
+        this(x0, x1, dx0, dx1, ddx0, ddx1, y0, y1, dy0, dy1, ddy0, ddy1);
+    }
 
-  calcCoeffs() {
-    this._ax = -6 * x0 - 3 * dx0 - 0.5 * ddx0 + 0.5 * ddx1 - 3 * dx1 + 6 * x1;
-    this._bx = 15 * x0 + 8 * dx0 + 1.5 * ddx0 - ddx1 + 7 * dx1 - 15 * x1;
-    this._cx = -10 * x0 - 6 * dx0 - 1.5 * ddx0 + 0.5 * ddx1 - 4 * dx1 + 10 * x1;
-    this._dx = 0.5 * ddx0;
-    this._ex = dx0;
-    this._fx = x0;
+    /**
+     * 
+     * @param {number} x0 
+     * @param {number} x1 
+     * @param {number} dx0 
+     * @param {number} dx1 
+     * @param {number} ddx0 
+     * @param {number} ddx1 
+     * @param {number} y0 
+     * @param {number} y1 
+     * @param {number} dy0 
+     * @param {number} dy1 
+     * @param {number} ddy0 
+     * @param {number} ddy1 
+     */
+    constructor(x0, x1, dx0, dx1, ddx0, ddx1, y0, y1, dy0, dy1, ddy0, ddy1) {
+        this.x0 = x0;
+        this.x1 = x1;
+        this.dx0 = dx0;
+        this.dx1 = dx1;
+        this.ddx0 = ddx0;
+        this.ddx1 = ddx1;
+        this.y0 = y0;
+        this.y1 = y1;
+        this.dy0 = dy0;
+        this.dy1 = dy1;
+        this.ddy0 = ddy0;
+        this.ddy1 = ddy1;s
 
-    this._ay = -6 * this.y0 - 3 * this.dy0 - 0.5 * this.ddy0 + 0.5 * this.ddy1 - 3 * this.dy1 + 6 * this.y1;
-    this._by = 15 * this.y0 + 8 * this.dy0 + 1.5 * this.ddy0 - this.ddy1 + 7 * this.dy1 - 15 * this.y1;
-    this._cy = -10 * this.y0 - 6 * this.dy0 - 1.5 * this.ddy0 + 0.5 * this.ddy1 - 4 * this.dy1 + 10 * this.y1;
-    this._dy = 0.5 * this.ddy0;
-    this._ey = this.dy0;
-    this._fy = this.y0;
-  }
+        this._ax = 0;
+        this._bx = 0;
+        this._cx = 0;
+        this._dx = 0;
+        this._ex = 0;
+        this._fx = 0;
 
-  /**
-   * Get a point on the path.
-   * @param {number} t Place along the path to get (0 - 1).
-   * @returns {Vector2d} The point on the path.
-   */
-  getPoint(t) {
-    let x = this.ax * this.t * this.t * this.t * this.t * this.t + this.bx * this.t * this.t * this.t * this.t + this.cx * this.t * this.t * this.t + this.dx * this.t * this.t + this.ex * this.t + this.fx;
-    let y = this.ay * this.t * this.t * this.t * this.t * this.t + this.by * this.t * this.t * this.t * this.t + this.cy * this.t * this.t * this.t + this.dy * this.t * this.t + this.ey * this.t + this.fy;
-    return new Vector2d(x, y);
-  }
+        this._ay = 0;
+        this._by = 0;
+        this._cy = 0;
+        this._dy = 0;
+        this._ey = 0;
+        this._fy = 0;
 
-  __dx(t) {
-    return 5 * this._ax * t * t * t * t + 4 * this._bx * t * t * t + 3 * this._cx * t * t + 2 * this._dx * t + this._ex;
-  }
+        this._kSamples = 100;
 
-  __dy(t) {
-    return 5 * this._ay * t * t * t * t + 4 * this._by * t * t * t + 3 * this._cy * t * t + 2 * this._dy * t + this._ey;
-  }
+        this.calcCoeffs();
+    }
 
-  __ddx(t) {
-    return 20 * this._ax * t * t * t + 12 * this._bx * t * t + 6 * this._cx * t + 2 * this._dx
-  }
+    calcCoeffs() {
+        this._ax = -6 * x0 - 3 * dx0 - 0.5 * ddx0 + 0.5 * ddx1 - 3 * dx1 + 6 * x1;
+        this._bx = 15 * x0 + 8 * dx0 + 1.5 * ddx0 - ddx1 + 7 * dx1 - 15 * x1;
+        this._cx = -10 * x0 - 6 * dx0 - 1.5 * ddx0 + 0.5 * ddx1 - 4 * dx1 + 10 * x1;
+        this._dx = 0.5 * ddx0;
+        this._ex = dx0;
+        this._fx = x0;
 
-  __ddy(t) {
-    return 20 * this._ay * t * t * t + 12 * this._by * t * t + 6 * this._cy * t + 2 * this._dy
-  }
+        this._ay = -6 * this.y0 - 3 * this.dy0 - 0.5 * this.ddy0 + 0.5 * this.ddy1 - 3 * this.dy1 + 6 * this.y1;
+        this._by = 15 * this.y0 + 8 * this.dy0 + 1.5 * this.ddy0 - this.ddy1 + 7 * this.dy1 - 15 * this.y1;
+        this._cy = -10 * this.y0 - 6 * this.dy0 - 1.5 * this.ddy0 + 0.5 * this.ddy1 - 4 * this.dy1 + 10 * this.y1;
+        this._dy = 0.5 * this.ddy0;
+        this._ey = this.dy0;
+        this._fy = this.y0;
+    }
 
-  __dddx(t) {
-    return 60 * this._ax * t * t + 24 * this._bx * t + 6 * this._cx;
-  }
+    /**
+     * Get a point on the path.
+     * @param {number} t Place along the path to get (0 - 1).
+     * @returns {Vector2d} The point on the path.
+     */
+    getPoint(t) {
+        let x = this.ax * this.t * this.t * this.t * this.t * this.t + this.bx * this.t * this.t * this.t * this.t + this.cx * this.t * this.t * this.t + this.dx * this.t * this.t + this.ex * this.t + this.fx;
+        let y = this.ay * this.t * this.t * this.t * this.t * this.t + this.by * this.t * this.t * this.t * this.t + this.cy * this.t * this.t * this.t + this.dy * this.t * this.t + this.ey * this.t + this.fy;
+        return new Vector2d(x, y);
+    }
 
-  __dddy(t) {
-    return 60 * this._ay * t * t + 24 * this._by * t + 6 * this._cy;
-  }
+    __dx(t) {
+        return 5 * this._ax * t * t * t * t + 4 * this._bx * t * t * t + 3 * this._cx * t * t + 2 * this._dx * t + this._ex;
+    }
 
-  /**
-   * Get the velocity at a point on the spline.
-   * @param {number} t Point along spline.
-   */
-  getVelocity(t) {
-    return Math.hypot(this.__dx(t), this.__dy(t));
-  }
+    __dy(t) {
+        return 5 * this._ay * t * t * t * t + 4 * this._by * t * t * t + 3 * this._cy * t * t + 2 * this._dy * t + this._ey;
+    }
 
-  /**
-   * Get the curvature at a point on the spline.
-   * @param {number} t  Point along spline.
-   */
-  getCurvature(t) {
-    let temp = this.__dx(t) * this.__ddy(t) - this.__ddx(t) * this.__dy(t)
-    temp /= ((this.__dx(t) * this.__dx(t) + this.__dy(t) * __dy(t)) * Math.sqrt((this.__dx(t) * this.__dx(t) + this.__dy(t) * this.__dy(t))));
-    return temp;
-  }
+    __ddx(t) {
+        return 20 * this._ax * t * t * t + 12 * this._bx * t * t + 6 * this._cx * t + 2 * this._dx
+    }
 
-  /**
-   * 
-   * @param {number} t 
-   */
-  getDCurvature(t) {
-    let dx2dy2 = (this.__dx(t) * this.__dx(t) + this.__dy(t) * this.__dy(t));
-    let num = (this.__dx(t) * this.__dddy(t) - this.__dddx(t) * this.__dy(t)) * dx2dy2 - 3 * (this.__dx(t) * this.__ddy(t) - this.__ddx(t) * this.__dy(t)) * (this.__dx(t) * this.__ddx(t) + this.__dy(t) * this.__ddy(t));
-    return num / (dx2dy2 * dx2dy2 * Math.sqrt(dx2dy2));
-  }
+    __ddy(t) {
+        return 20 * this._ay * t * t * t + 12 * this._by * t * t + 6 * this._cy * t + 2 * this._dy
+    }
 
-  dCurvature2(t) {
-    let dx2dy2 = (this.__dx(t) * this.__dx(t) + this.__dy(t) * this.__dy(t));
-    let num = (this.__dx(t) * this.__dddy(t) - this.__dddx(t) * this.__dy(t)) * dx2dy2 - 3 * (this.__dx(t) * this.__ddy(t) - this.__ddx(t) * this.__dy(t)) * (this.__dx(t) * this.__ddx(t) + this.__dy(t) * this.__ddy(t));
-    return num * num / (dx2dy2 * dx2dy2 * dx2dy2 * dx2dy2 * dx2dy2);
-  }
+    __dddx(t) {
+        return 60 * this._ax * t * t + 24 * this._bx * t + 6 * this._cx;
+    }
 
-  // getHeading()
+    __dddy(t) {
+        return 60 * this._ay * t * t + 24 * this._by * t + 6 * this._cy;
+    }
+
+    /**
+     * Get the velocity at a point on the spline.
+     * @param {number} t Point along spline.
+     */
+    getVelocity(t) {
+        return Math.hypot(this.__dx(t), this.__dy(t));
+    }
+
+    /**
+     * Get the curvature at a point on the spline.
+     * @param {number} t  Point along spline.
+     */
+    getCurvature(t) {
+        let temp = this.__dx(t) * this.__ddy(t) - this.__ddx(t) * this.__dy(t)
+        temp /= ((this.__dx(t) * this.__dx(t) + this.__dy(t) * __dy(t)) * Math.sqrt((this.__dx(t) * this.__dx(t) + this.__dy(t) * this.__dy(t))));
+        return temp;
+    }
+
+    /**
+     * 
+     * @param {number} t 
+     */
+    getDCurvature(t) {
+        let dx2dy2 = (this.__dx(t) * this.__dx(t) + this.__dy(t) * this.__dy(t));
+        let num = (this.__dx(t) * this.__dddy(t) - this.__dddx(t) * this.__dy(t)) * dx2dy2 - 3 * (this.__dx(t) * this.__ddy(t) - this.__ddx(t) * this.__dy(t)) * (this.__dx(t) * this.__ddx(t) + this.__dy(t) * this.__ddy(t));
+        return num / (dx2dy2 * dx2dy2 * Math.sqrt(dx2dy2));
+    }
+
+    /**
+     * 
+     * @param {number} t 
+     */
+    dCurvature2(t) {
+        let dx2dy2 = (this.__dx(t) * this.__dx(t) + this.__dy(t) * this.__dy(t));
+        let num = (this.__dx(t) * this.__dddy(t) - this.__dddx(t) * this.__dy(t)) * dx2dy2 - 3 * (this.__dx(t) * this.__ddy(t) - this.__ddx(t) * this.__dy(t)) * (this.__dx(t) * this.__ddx(t) + this.__dy(t) * this.__ddy(t));
+        return num * num / (dx2dy2 * dx2dy2 * dx2dy2 * dx2dy2 * dx2dy2);
+    }
+
+    /**
+     * Get the rotation at which the robot faces at a point on the spline.
+     * @param {number} t The point along the spline.
+     */
+    getHeading(t) {
+        const x = this.__dx(t);
+        const y = this.__dy(t);
+
+        let sin = 0;
+        let cos = 0;
+
+        const magnitude = Math.hypot(x, y);
+        if (magnitude > kEpsilon) {
+            sin = y / magnitude;
+            cos = x / magnitude;
+        } else {
+            sin = 0;
+            cos = 1;
+        }
+
+        return Math.atan2(sin, cos);
+    }
+
+    sumDCurvature2() {
+        let dt = 1.0 / this._kSamples;
+        let sum = 0.0;
+        let t = 0.0;
+
+        while (t < 1.0) {
+            sum += (dt * dCurvature2(t));
+            t += dt;
+        }
+
+        return sum;
+    }
+
+    toString() {
+        return `${this.ax}*t^5 + ${this.bx}*t^4 + ${this.cx}*t^3 + ${this.dx}*t^2 + ${this.ex}* t\n`
+
+    }
 }

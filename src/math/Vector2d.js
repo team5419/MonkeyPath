@@ -26,6 +26,17 @@ class Vector2d {
   }
 
   /**
+   * 
+   * @param {Vector2d} other 
+   */
+  distance(other) {
+    const x = this.x - other.x;
+    const y = this.y - other.y;
+
+    return hypot(x, y);
+  }
+
+  /**
    * Add a vector to this.
    * @param {Vector2d} v2 The vector to add.
    * @returns {Vector2d} The sum of the vectors.
