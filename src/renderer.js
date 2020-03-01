@@ -157,16 +157,17 @@ function fillRobot(position, heading, color) {
 
 function drawSplines(fill, animate) {
   const maxVel = Math.max(...velocities)
+  const minVel = Math.min(...velocities)
+  console.log(velocities)
+  console.log(maxVel)
   animate = animate || false;
   let i = 0;
 
   if (animate) {
     clearInterval(animation);
 
-    console.log(splinePoints.length)
     animation = setInterval(() => {
       if (i >= splinePoints.length) {
-        console.log("stop animation")
         animating = false;
         clearInterval(animation);
         return;
@@ -175,11 +176,10 @@ function drawSplines(fill, animate) {
       animating = true;
 
       const splinePoint = splinePoints[i];
-      console.log(i++ / splinePoints.length)
-      const hue = Math.round(180 * (i++ / splinePoints.length));
+      // const hue = Math.round(180 * (i++ / splinePoints.length));
 
-      // const hue = Math.round(180 * (velocities[i] / maxVel));
-
+      const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
+      console.log(hue)
 
       const previous = ctx.globalCompositeOperation;
       fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
@@ -187,13 +187,15 @@ function drawSplines(fill, animate) {
       drawRobot(splinePoint, splinePoint.rotation.getRadians());
       splinePoint.draw(false, splineWidth, ctx);
       ctx.globalCompositeOperation = previous;
+
+      i++;
     }, 25);
   } else {
     splinePoints.forEach((splinePoint) => {
       splinePoint.draw(false, splineWidth, ctx);
 
       if (fill) {
-        const hue = Math.round(180 * (i++ / splinePoints.length));
+        const hue = Math.round(180 * (velocities[i] / maxVel));
         fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
       } else {
         drawRobot(splinePoint, splinePoint.rotation.getRadians());

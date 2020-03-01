@@ -77,27 +77,27 @@ class QuinticHermiteSpline {
     }
 
     __dx(t) {
-        return 5 * this._ax * t * t * t * t + 4 * this._bx * t * t * t + 3 * this._cx * t * t + 2 * this._dx * t + this._ex;
+        return 5 * this.ax * t * t * t * t + 4 * this.bx * t * t * t + 3 * this.cx * t * t + 2 * this.dx * t + this.ex;
     }
 
     __dy(t) {
-        return 5 * this._ay * t * t * t * t + 4 * this._by * t * t * t + 3 * this._cy * t * t + 2 * this._dy * t + this._ey;
+        return 5 * this.ay * t * t * t * t + 4 * this.by * t * t * t + 3 * this.cy * t * t + 2 * this.dy * t + this.ey;
     }
 
     __ddx(t) {
-        return 20 * this._ax * t * t * t + 12 * this._bx * t * t + 6 * this._cx * t + 2 * this._dx
+        return 20 * this.ax * t * t * t + 12 * this.bx * t * t + 6 * this.cx * t + 2 * this.dx
     }
 
     __ddy(t) {
-        return 20 * this._ay * t * t * t + 12 * this._by * t * t + 6 * this._cy * t + 2 * this._dy
+        return 20 * this.ay * t * t * t + 12 * this.by * t * t + 6 * this.cy * t + 2 * this.dy
     }
 
     __dddx(t) {
-        return 60 * this._ax * t * t + 24 * this._bx * t + 6 * this._cx;
+        return 60 * this.ax * t * t + 24 * this.bx * t + 6 * this.cx;
     }
 
     __dddy(t) {
-        return 60 * this._ay * t * t + 24 * this._by * t + 6 * this._cy;
+        return 60 * this.ay * t * t + 24 * this.by * t + 6 * this.cy;
     }
 
     /**
