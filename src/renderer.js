@@ -8,7 +8,7 @@ const QuinticHermiteSpline = require('./math/QuinticHermiteSpline.js');
 
 let waypoints = [];
 let splinePoints = [];
-let movePoints = [];
+let velocities = [];
 let ctx;
 let ctxBackground;
 let image;
@@ -18,8 +18,8 @@ let animating = false;
 
 const fieldWidth = 886; // inches
 const fieldHeight = 360; // inches
-const width = 1604; // pixels
-const height = 651; // pixels
+const width = 5670/3; // pixels
+const height = 2286/3; // pixels
 
 const robotWidth = 22.01; // inches
 const robotHeight = 27.47; // inches
@@ -156,14 +156,17 @@ function fillRobot(position, heading, color) {
  */
 
 function drawSplines(fill, animate) {
+  const maxVel = Math.max(...velocities)
   animate = animate || false;
   let i = 0;
 
   if (animate) {
     clearInterval(animation);
 
+    console.log(splinePoints.length)
     animation = setInterval(() => {
-      if (i === splinePoints.length) {
+      if (i >= splinePoints.length) {
+        console.log("stop animation")
         animating = false;
         clearInterval(animation);
         return;
@@ -172,7 +175,11 @@ function drawSplines(fill, animate) {
       animating = true;
 
       const splinePoint = splinePoints[i];
+      console.log(i++ / splinePoints.length)
       const hue = Math.round(180 * (i++ / splinePoints.length));
+
+      // const hue = Math.round(180 * (velocities[i] / maxVel));
+
 
       const previous = ctx.globalCompositeOperation;
       fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
@@ -246,9 +253,8 @@ function update() {
 
   splines.forEach(spline => {
     for(i = 0.0; i < 1; i += 1/pointsPerSpline){
-      let point = new Pose2d(spline.getPoint(i), Rotation2d.fromRadians(spline.getHeading(i)));
-      console.log(point.toString());
-      splinePoints.push(point);
+      velocities.push(spline.getVelocity(i))
+      splinePoints.push(new Pose2d(spline.getPoint(i), Rotation2d.fromRadians(spline.getHeading(i))))
     }
   })
 
