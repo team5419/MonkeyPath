@@ -1,6 +1,6 @@
-import { TouchBarScrubber } from "electron";
-import { kEpsilon } from "constants";
-const Vector2d = require('./Vector2d');
+// import { TouchBarScrubber } from "electron";
+// import { kEpsilon } from "constants";
+const Translation2d = require('./Translation2d');
 
 /**
  * Represents a Quintic Hermite Spline
@@ -9,59 +9,25 @@ const Vector2d = require('./Vector2d');
 class QuinticHermiteSpline {
     /**
      * Create a spline from vectors and rotations.
-     * @param {Vector2d} p0 Start vector.
-     * @param {Vector2d} p1 End vector.
-     * @param {number} h0 Start rotation (radians).
-     * @param {number} h1 End rotation (radians).
+     * @param {Pose2d} p0 Start vector.
+     * @param {Pose2d} p1 End vector.
      */
-    constructor(p0, p1, h0, h1) {
+    constructor(p0, p1) {
         const scale = 1.2 * p0.distance(p1);
 
-        const x0 = p0.x;
-        const x1 = p1.x;
-        const dx0 = Math.cos(h0) * scale;
-        const dx1 = Math.cos(h1) * scale;
-        const ddx0 = 0;
-        const ddx1 = 0;
+        this.x0 = p0.x;
+        this.x1 = p1.x;
+        this.dx0 = Math.cos(p0.rotation) * scale;
+        this.dx1 = Math.cos(p1.rotation) * scale;
+        this.ddx0 = 0;
+        this.ddx1 = 0;
 
-        const y0 = p0.y;
-        const y1 = p1.y;
-        const dy0 = Math.sin(h0) * scale;
-        const dy1 = Math.sin(h1) * scale;
-        const ddy0 = 0;
-        const ddy1 = 0;
-
-        this(x0, x1, dx0, dx1, ddx0, ddx1, y0, y1, dy0, dy1, ddy0, ddy1);
-    }
-
-    /**
-     * 
-     * @param {number} x0 
-     * @param {number} x1 
-     * @param {number} dx0 
-     * @param {number} dx1 
-     * @param {number} ddx0 
-     * @param {number} ddx1 
-     * @param {number} y0 
-     * @param {number} y1 
-     * @param {number} dy0 
-     * @param {number} dy1 
-     * @param {number} ddy0 
-     * @param {number} ddy1 
-     */
-    constructor(x0, x1, dx0, dx1, ddx0, ddx1, y0, y1, dy0, dy1, ddy0, ddy1) {
-        this.x0 = x0;
-        this.x1 = x1;
-        this.dx0 = dx0;
-        this.dx1 = dx1;
-        this.ddx0 = ddx0;
-        this.ddx1 = ddx1;
-        this.y0 = y0;
-        this.y1 = y1;
-        this.dy0 = dy0;
-        this.dy1 = dy1;
-        this.ddy0 = ddy0;
-        this.ddy1 = ddy1;s
+        this.y0 = p0.y;
+        this.y1 = p1.y;
+        this.dy0 = Math.sin(p0.rotation) * scale;
+        this.dy1 = Math.sin(p1.rotation) * scale;
+        this.ddy0 = 0;
+        this.ddy1 = 0;
 
         this._ax = 0;
         this._bx = 0;
@@ -76,10 +42,9 @@ class QuinticHermiteSpline {
         this._dy = 0;
         this._ey = 0;
         this._fy = 0;
-
         this._kSamples = 100;
 
-        this.calcCoeffs();
+        this.calcCoeffs
     }
 
     calcCoeffs() {
@@ -101,12 +66,12 @@ class QuinticHermiteSpline {
     /**
      * Get a point on the path.
      * @param {number} t Place along the path to get (0 - 1).
-     * @returns {Vector2d} The point on the path.
+     * @returns {Translation2d} The point on the path.
      */
     getPoint(t) {
         let x = this.ax * this.t * this.t * this.t * this.t * this.t + this.bx * this.t * this.t * this.t * this.t + this.cx * this.t * this.t * this.t + this.dx * this.t * this.t + this.ex * this.t + this.fx;
         let y = this.ay * this.t * this.t * this.t * this.t * this.t + this.by * this.t * this.t * this.t * this.t + this.cy * this.t * this.t * this.t + this.dy * this.t * this.t + this.ey * this.t + this.fy;
-        return new Vector2d(x, y);
+        return new Translation2d(x, y);
     }
 
     __dx(t) {
@@ -212,3 +177,5 @@ class QuinticHermiteSpline {
 
     }
 }
+
+module.exports = Translation2d;

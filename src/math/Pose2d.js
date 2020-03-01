@@ -1,74 +1,65 @@
-import { kEpsilon } from 'constants';
-const Vector2d = require('./Vector2d');
-
-/**
- * Represents a pose on the field.
- */
 class Pose2d {
-    /**
-     * Create a Pose2d from a vector and rotation.
-     * @param {Vector2d} translation Linear position on the field.
-     * @param {number} rotation Rotation of the robot (in radians).
-     */
-    constructor(translation, rotation) {
-        this.translation = translation;
-        this.rotation = rotation;
+  constructor(translation, rotation, comment) {
+    this.translation = translation;
+    this.rotation = rotation;
+    this.comment = comment || '';
+  }
+  
+  get getTranslation() {
+    return this.translation;
+  }
+
+  get getRotation() {
+    return this.rotation;
+  }
+
+  transformBy(other) {
+    return new Pose2d(this.translation.translateBy(other.translation.rotateBy(this.rotation)),
+      this.rotation.rotateBy(other.rotation));
+  }
+
+  inverse() {
+    const rotationInverted = this.rotation.inverse();
+    return new Pose2d(this.translation.inverse().rotateBy(rotationInverted), rotationInverted);
+  }
+
+  normal() {
+    return new Pose2d(this.translation, this.rotation.normal());
+  }
+
+  heading(other) {
+    return Math.atan2(this.translation.y - other.translation.y,
+      this.translation.x - other.translation.x);
+  }
+
+  draw(drawHeading, radius, ctx) {
+    this.translation.draw(null, radius, ctx);
+
+    if (!drawHeading) {
+      return;
     }
 
-    // get twist() {
-    //     let dtheta = this.rotation;
-    //     let halfDTheta = dtheta / 2.0;
-    //     let cosMinusOne = Math.cos(this.rotation) - 1;
+    const x = this.translation.drawX;
+    const y = this.translation.drawY;
 
-    //     let halfThetaByTanOfHalfDTheta = Math.abs(cosMinusOne) < kEpsilon
-    //         ? 1.0 - 1.0 / 12.0 * dtheta * dtheta
-    //         : -(halfDTheta * Math.sin(rotation)) / cosMinusOne;
-        
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 25 * Math.cos(-this.rotation.getRadians()),
+      y + 25 * Math.sin(-this.rotation.getRadians()));
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.closePath();
+  }
 
-    // }
+  toString() {
+    return `new Pose2d(new Translation2d(${this.translation.x}, ${this.translation.y}), new Rotation2d(${this.rotation.cos}, ${this.rotation.sin}, ${this.rotation.normalize}))`;
+  }
 
-    /**
-     * Get this pose with the rotation flipped.
-     */
-    get mirror() {
-        return new Pose2d(new Vector2d(this.translation.x, this.translation.y), this.rotation * -1);
-    }
-
-    /**
-     * Transform this pose by another pose.
-     * @param {Pose2d} other Pose to transform by.
-     * @returns {Pose2d} Transformed pose.
-     */
-    transformBy(other) {
-        return new Pose2d(this.translation.add(other.translation.multiply(rotation)), this.rotation + other.rotation);
-    }
-
-    isCollinear(other) {
-        if (!this.rotation == other.rotation) {
-
-        }
-    }
-
-    // /**
-    //  * 
-    //  * @param {Pose2d} endValue 
-    //  * @param {number} t 
-    //  */
-    // interpolate(endValue, t) {
-    //     if (t <= 0) {
-    //         return new Pose2d(this.translation, this.rotation);
-    //     } else if (t >= 1) {
-    //         return new Pose2d(endValue.translation, endValue.rotation);
-    //     }
-    // }
-
-    toCSV() {
-        return `${this.translation.toCSV()}, ${this.rotation}`
-    }
-
-    toString() {
-        return this.toCSV();
-    }
+  transform(other) {
+    other.position.rotate(this.rotation);
+    this.translation.translate(other.translation);
+    this.rotation.rotate(other.rotation);
+  }
 }
 
 module.exports = Pose2d;

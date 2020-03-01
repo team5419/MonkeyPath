@@ -1,10 +1,10 @@
 /* eslint-disable */
-const $ = window.$ = window.jQuery = require('jQuery');
+const $ = window.$ = window.jQuery = require('jquery');
 require('jquery-ui-dist/jquery-ui');
-const PathGen = require('./PathGen.js');
-const Translation2d = require('./Translation2d.js');
-const Rotation2d = require('./Rotation2d.js');
-const Pose2d = require('./Pose2d.js');
+const Pose2d = require('./math/Pose2d.js');
+const Translation2d = require('./math/Translation2d.js');
+const Rotation2d = require('./math/Rotation2d.js');
+const QuinticHermiteSpline = require('./math/QuinticHermiteSpline.js');
 
 let waypoints = [];
 let splinePoints = [];
@@ -27,6 +27,7 @@ const robotHeight = 27.47; // inches
 const waypointRadius = 7;
 const splineWidth = 2;
 const pi = Math.PI;
+const pointsPerSpline = 100;
 
 /**
  * Converts coordinates relative to the full picture to coordinates relative to field
@@ -227,15 +228,31 @@ function update() {
     }
     const comment = ($($($(this).children()).children()[3]).val());
     const enabled = ($($($(this).children()).children()[4]).prop('checked'));
+
+    heading = heading / 180 * Math.PI
+
     if (enabled) {
-      waypoints.push(new Pose2d(new Translation2d(x, y), Rotation2d.fromDegrees(heading), comment));
+      waypoints.push(new Pose2d(new Translation2d(x, y), Rotation2d.fromRadians(heading), comment));
     }
   });
 
   draw(1);
 
   splinePoints = [];
-  splinePoints = PathGen.generatePath(waypoints);
+  splines = [];
+  for(i = 0; i < waypoints.length - 1; i++) {
+    splines.push(new QuinticHermiteSpline(waypoints[i], waypoints[i+1]))
+  }
+
+  console.log(new QuinticHermiteSpline(1,1))
+  splinePoints.forEach(spline => {
+    for(i = 0.0; i < 1; i += 1/pointsPerSpline){
+      let point = spline.getPoint(i)
+      console.log(point)
+      splinePoints.push(spline.getPoint(i))
+    }
+  })
+
   var printSpline = [];
   for (i = 1; i <= splinePoints.length - 1; i++) {
     printSpline.push(splinePoints[i].getTranslation);
@@ -353,6 +370,4 @@ function addPoint() {
   rebind();
 }
 
-
 $(window).ready(init);
-log("test");
