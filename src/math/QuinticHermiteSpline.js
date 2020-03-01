@@ -29,38 +29,38 @@ class QuinticHermiteSpline {
         this.ddy0 = 0;
         this.ddy1 = 0;
 
-        this._ax = 0;
-        this._bx = 0;
-        this._cx = 0;
-        this._dx = 0;
-        this._ex = 0;
-        this._fx = 0;
+        this.ax = 0;
+        this.bx = 0;
+        this.cx = 0;
+        this.dx = 0;
+        this.ex = 0;
+        this.fx = 0;
 
-        this._ay = 0;
-        this._by = 0;
-        this._cy = 0;
-        this._dy = 0;
-        this._ey = 0;
-        this._fy = 0;
+        this.ay = 0;
+        this.by = 0;
+        this.cy = 0;
+        this.dy = 0;
+        this.ey = 0;
+        this.fy = 0;
         this._kSamples = 100;
 
         this.calcCoeffs
     }
 
     calcCoeffs() {
-        this._ax = -6 * x0 - 3 * dx0 - 0.5 * ddx0 + 0.5 * ddx1 - 3 * dx1 + 6 * x1;
-        this._bx = 15 * x0 + 8 * dx0 + 1.5 * ddx0 - ddx1 + 7 * dx1 - 15 * x1;
-        this._cx = -10 * x0 - 6 * dx0 - 1.5 * ddx0 + 0.5 * ddx1 - 4 * dx1 + 10 * x1;
-        this._dx = 0.5 * ddx0;
-        this._ex = dx0;
-        this._fx = x0;
+        this.ax = -6 * x0 - 3 * dx0 - 0.5 * ddx0 + 0.5 * ddx1 - 3 * dx1 + 6 * x1;
+        this.bx = 15 * x0 + 8 * dx0 + 1.5 * ddx0 - ddx1 + 7 * dx1 - 15 * x1;
+        this.cx = -10 * x0 - 6 * dx0 - 1.5 * ddx0 + 0.5 * ddx1 - 4 * dx1 + 10 * x1;
+        this.dx = 0.5 * ddx0;
+        this.ex = dx0;
+        this.fx = x0;
 
-        this._ay = -6 * this.y0 - 3 * this.dy0 - 0.5 * this.ddy0 + 0.5 * this.ddy1 - 3 * this.dy1 + 6 * this.y1;
-        this._by = 15 * this.y0 + 8 * this.dy0 + 1.5 * this.ddy0 - this.ddy1 + 7 * this.dy1 - 15 * this.y1;
-        this._cy = -10 * this.y0 - 6 * this.dy0 - 1.5 * this.ddy0 + 0.5 * this.ddy1 - 4 * this.dy1 + 10 * this.y1;
-        this._dy = 0.5 * this.ddy0;
-        this._ey = this.dy0;
-        this._fy = this.y0;
+        this.ay = -6 * this.y0 - 3 * this.dy0 - 0.5 * this.ddy0 + 0.5 * this.ddy1 - 3 * this.dy1 + 6 * this.y1;
+        this.by = 15 * this.y0 + 8 * this.dy0 + 1.5 * this.ddy0 - this.ddy1 + 7 * this.dy1 - 15 * this.y1;
+        this.cy = -10 * this.y0 - 6 * this.dy0 - 1.5 * this.ddy0 + 0.5 * this.ddy1 - 4 * this.dy1 + 10 * this.y1;
+        this.dy = 0.5 * this.ddy0;
+        this.ey = this.dy0;
+        this.fy = this.y0;
     }
 
     /**
@@ -69,8 +69,8 @@ class QuinticHermiteSpline {
      * @returns {Translation2d} The point on the path.
      */
     getPoint(t) {
-        let x = this.ax * this.t * this.t * this.t * this.t * this.t + this.bx * this.t * this.t * this.t * this.t + this.cx * this.t * this.t * this.t + this.dx * this.t * this.t + this.ex * this.t + this.fx;
-        let y = this.ay * this.t * this.t * this.t * this.t * this.t + this.by * this.t * this.t * this.t * this.t + this.cy * this.t * this.t * this.t + this.dy * this.t * this.t + this.ey * this.t + this.fy;
+        let x = this.ax * t * t * t * t * t + this.bx * t * t * t * t + this.cx * t * t * t + this.dx * t * t + this.ex * t + this.fx;
+        let y = this.ay * t * t * t * t * t + this.by * t * t * t * t + this.cy * t * t * t + this.dy * t * t + this.ey * t + this.fy;
         return new Translation2d(x, y);
     }
 
@@ -178,4 +178,4 @@ class QuinticHermiteSpline {
     }
 }
 
-module.exports = Translation2d;
+module.exports = QuinticHermiteSpline;

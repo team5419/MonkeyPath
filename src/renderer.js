@@ -244,21 +244,15 @@ function update() {
     splines.push(new QuinticHermiteSpline(waypoints[i], waypoints[i+1]))
   }
 
-  console.log(new QuinticHermiteSpline(1,1))
-  splinePoints.forEach(spline => {
+  splines.forEach(spline => {
     for(i = 0.0; i < 1; i += 1/pointsPerSpline){
       let point = spline.getPoint(i)
-      console.log(point)
-      splinePoints.push(spline.getPoint(i))
+      console.log(i, point)
+      splinePoints.push(point)
     }
   })
 
-  var printSpline = [];
-  for (i = 1; i <= splinePoints.length - 1; i++) {
-    printSpline.push(splinePoints[i].getTranslation);
-  }
   console.log('generated path');
-  console.log(printSpline);
 
   splinePoints.pop();
 

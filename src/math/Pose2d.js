@@ -31,6 +31,10 @@ class Pose2d {
     return Math.atan2(this.translation.y - other.translation.y,
       this.translation.x - other.translation.x);
   }
+  
+  distance(other) {
+    return Math.hypot(this.translation.x - other.translation.x, this.translation.y - other.translation.y)
+  }
 
   draw(drawHeading, radius, ctx) {
     this.translation.draw(null, radius, ctx);
