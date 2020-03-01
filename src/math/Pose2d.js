@@ -56,7 +56,7 @@ class Pose2d {
   }
 
   toString() {
-    return `new Pose2d(new Translation2d(${this.translation.x}, ${this.translation.y}), new Rotation2d(${this.rotation.cos}, ${this.rotation.sin}, ${this.rotation.normalize}))`;
+    return `${this.translation.x}, ${this.translation.y}, ${this.rotation.getDegrees()}`
   }
 
   transform(other) {

@@ -1,5 +1,5 @@
 // import { TouchBarScrubber } from "electron";
-// import { kEpsilon } from "constants";
+kEpsilon = require('./constants');
 const Translation2d = require('./Translation2d');
 
 /**
@@ -15,17 +15,17 @@ class QuinticHermiteSpline {
     constructor(p0, p1) {
         const scale = 1.2 * p0.distance(p1);
 
-        this.x0 = p0.x;
-        this.x1 = p1.x;
-        this.dx0 = Math.cos(p0.rotation) * scale;
-        this.dx1 = Math.cos(p1.rotation) * scale;
+        this.x0 = p0.translation.x;
+        this.x1 = p1.translation.x;
+        this.dx0 = Math.cos(p0.rotation.getRadians()) * scale;
+        this.dx1 = Math.cos(p1.rotation.getRadians()) * scale;
         this.ddx0 = 0;
         this.ddx1 = 0;
 
-        this.y0 = p0.y;
-        this.y1 = p1.y;
-        this.dy0 = Math.sin(p0.rotation) * scale;
-        this.dy1 = Math.sin(p1.rotation) * scale;
+        this.y0 = p0.translation.y;
+        this.y1 = p1.translation.y;
+        this.dy0 = Math.sin(p0.rotation.getRadians()) * scale;
+        this.dy1 = Math.sin(p1.rotation.getRadians()) * scale;
         this.ddy0 = 0;
         this.ddy1 = 0;
 
@@ -44,16 +44,17 @@ class QuinticHermiteSpline {
         this.fy = 0;
         this._kSamples = 100;
 
-        this.calcCoeffs
+        this.calcCoeffs()
     }
 
     calcCoeffs() {
-        this.ax = -6 * x0 - 3 * dx0 - 0.5 * ddx0 + 0.5 * ddx1 - 3 * dx1 + 6 * x1;
-        this.bx = 15 * x0 + 8 * dx0 + 1.5 * ddx0 - ddx1 + 7 * dx1 - 15 * x1;
-        this.cx = -10 * x0 - 6 * dx0 - 1.5 * ddx0 + 0.5 * ddx1 - 4 * dx1 + 10 * x1;
-        this.dx = 0.5 * ddx0;
-        this.ex = dx0;
-        this.fx = x0;
+        console.log(this.x0, this.y0)
+        this.ax = -6 * this.x0 - 3 * this.dx0 - 0.5 * this.ddx0 + 0.5 * this.ddx1 - 3 * this.dx1 + 6 * this.x1;
+        this.bx = 15 * this.x0 + 8 * this.dx0 + 1.5 * this.ddx0 - this.ddx1 + 7 * this.dx1 - 15 * this.x1;
+        this.cx = -10 * this.x0 - 6 * this.dx0 - 1.5 * this.ddx0 + 0.5 * this.ddx1 - 4 * this.dx1 + 10 * this.x1;
+        this.dx = 0.5 * this.ddx0;
+        this.ex = this.dx0;
+        this.fx = this.x0;
 
         this.ay = -6 * this.y0 - 3 * this.dy0 - 0.5 * this.ddy0 + 0.5 * this.ddy1 - 3 * this.dy1 + 6 * this.y1;
         this.by = 15 * this.y0 + 8 * this.dy0 + 1.5 * this.ddy0 - this.ddy1 + 7 * this.dy1 - 15 * this.y1;
@@ -61,6 +62,7 @@ class QuinticHermiteSpline {
         this.dy = 0.5 * this.ddy0;
         this.ey = this.dy0;
         this.fy = this.y0;
+        console.log(this.ax, this.ay, this.bx, this.by, this.cx, this.cy, this.dx, this.dy, this.ex, this.ey, this.fx, this.fy)
     }
 
     /**
@@ -174,7 +176,6 @@ class QuinticHermiteSpline {
 
     toString() {
         return `${this.ax}*t^5 + ${this.bx}*t^4 + ${this.cx}*t^3 + ${this.dx}*t^2 + ${this.ex}* t\n`
-
     }
 }
 

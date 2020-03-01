@@ -1,1 +1,2 @@
-export const kEpsilon = 1E-9;
+const kEpsilon = 1E-9;
+module.exports = kEpsilon

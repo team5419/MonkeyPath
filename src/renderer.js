@@ -246,9 +246,9 @@ function update() {
 
   splines.forEach(spline => {
     for(i = 0.0; i < 1; i += 1/pointsPerSpline){
-      let point = spline.getPoint(i)
-      console.log(i, point)
-      splinePoints.push(point)
+      let point = new Pose2d(spline.getPoint(i), Rotation2d.fromRadians(spline.getHeading(i)));
+      console.log(point.toString());
+      splinePoints.push(point);
     }
   })
 
