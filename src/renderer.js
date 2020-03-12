@@ -21,13 +21,13 @@ const height = 2286/zoom; // pixels
 const xOffset = 0;
 const yOffset = 0;
 
-const robotWidth = 1; // meters
-const robotHeight = 1; // meters
+const robotWidth = 2; // feet
+const robotHeight = 2; // feet
 
 const waypointRadius = 7;
 const splineWidth = 2;
 const pi = Math.PI;
-const pointsPerSpline = 100;
+const pointsPerSpline = 50;
 const clickToleranceRadius = 30 //pixels
 
 /**
@@ -184,12 +184,12 @@ function drawSplines(fill, animate) {
       const splinePoint = splinePoints[i];
       // const hue = Math.round(180 * (i++ / splinePoints.length));
 
-      const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
+      // const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
 
       const previous = ctx.globalCompositeOperation;
       // fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
       ctx.globalCompositeOperation = 'source-over';
-      // drawRobot(splinePoint, splinePoint.rotation.getRadians());
+      drawRobot(splinePoint, splinePoint.rotation.getRadians());
       splinePoint.draw(false, splineWidth, ctx);
       ctx.globalCompositeOperation = previous;
 
@@ -197,13 +197,13 @@ function drawSplines(fill, animate) {
     }, 25);
   } else {
     splinePoints.forEach((splinePoint) => {
-      // splinePoint.draw(false, splineWidth, ctx);
+      splinePoint.draw(false, splineWidth, ctx);
       
       if (fill) {
-        const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
+        // const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
         // fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
       } else {
-        // drawRobot(splinePoint, splinePoint.rotation.getRadians());
+        drawRobot(splinePoint, splinePoint.rotation.getRadians());
       }
       i++;
     });
@@ -332,10 +332,9 @@ function init() {
 
   const rect = canvases[0].getBoundingClientRect();
   
-  function getMousePos(event){
+  function getMousePos(event) {
     let x = (event.clientX - rect.left) / (rect.right - rect.left) * fieldWidth;
     let y = (event.clientY - rect.bottom) / (rect.top - rect.bottom) * fieldHeight;
-
     return new Translation2d(x,y)
   }
 
