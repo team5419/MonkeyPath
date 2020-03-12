@@ -27,7 +27,6 @@
                 <th>X</th>
                 <th>Y</th>
                 <th>Heading</th>
-                <th>Comments</th>
                 <th>Enabled</th>
                 <th>Delete</th>
             </thead>
@@ -35,14 +34,14 @@
                 <tr>
                     <td class="drag_handler"></td>
                     <td class="x"><input type="number" value="20"></td>
-                    <td class="y"><input type="number" value="-95"></td>
+                    <td class="y"><input type="number" value="10"></td>
                     <td class="heading"><input type="number" value="0"></td>
-                    <td class="comments"><input type="search" placeholder="Comments"></td>
                     <td class="enabled"><input type="checkbox" checked></td>
                     <td class="delete"><button onclick="$(this).parent().parent().remove();update()">&times;</button></td>
                 </tr>
             </tbody>
         </table>
+        <div id='test'></div>
     </body>
 </html>
 <script>if (typeof module === "object") {window.module = module; module = undefined;}</script>

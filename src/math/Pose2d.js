@@ -1,8 +1,8 @@
 class Pose2d {
-  constructor(translation, rotation, comment) {
+  constructor(translation, rotation, row) {
     this.translation = translation;
     this.rotation = rotation;
-    this.comment = comment || '';
+    this.row = row;
   }
   
   get getTranslation() {
@@ -33,6 +33,7 @@ class Pose2d {
   }
   
   distance(other) {
+    console.log(other, this)
     return Math.hypot(this.translation.x - other.translation.x, this.translation.y - other.translation.y)
   }
 
@@ -55,6 +56,15 @@ class Pose2d {
     ctx.closePath();
   }
 
+  setPoint(x,y,heading){
+    this.x = x || this.x;
+    this.y = y || this.y;
+    this.heading = heading || this.heading;
+    $($(this.row.children()[1]).children()[0]).val(this.x)
+    console.log($($(this.row.children()[2]).children()[0]))
+    $($(this.row.children()[2]).children()[0]).val(this.y)
+  }
+
   toString() {
     return `${this.translation.x}, ${this.translation.y}, ${this.rotation.getDegrees()}`
   }
@@ -63,6 +73,22 @@ class Pose2d {
     other.position.rotate(this.rotation);
     this.translation.translate(other.translation);
     this.rotation.rotate(other.rotation);
+  }
+
+  get x() {
+    return this.translation.x;
+  }
+
+  get y(){
+    return this.translation.y;
+  }
+
+  set x(val){
+    this.translation.x = val;
+  }
+
+  set y(val){
+    this.translation.y = val;
   }
 }
 

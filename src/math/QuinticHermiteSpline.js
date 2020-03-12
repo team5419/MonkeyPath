@@ -48,7 +48,6 @@ class QuinticHermiteSpline {
     }
 
     calcCoeffs() {
-        console.log(this.x0, this.y0)
         this.ax = -6 * this.x0 - 3 * this.dx0 - 0.5 * this.ddx0 + 0.5 * this.ddx1 - 3 * this.dx1 + 6 * this.x1;
         this.bx = 15 * this.x0 + 8 * this.dx0 + 1.5 * this.ddx0 - this.ddx1 + 7 * this.dx1 - 15 * this.x1;
         this.cx = -10 * this.x0 - 6 * this.dx0 - 1.5 * this.ddx0 + 0.5 * this.ddx1 - 4 * this.dx1 + 10 * this.x1;
@@ -62,7 +61,6 @@ class QuinticHermiteSpline {
         this.dy = 0.5 * this.ddy0;
         this.ey = this.dy0;
         this.fy = this.y0;
-        console.log(this.ax, this.ay, this.bx, this.by, this.cx, this.cy, this.dx, this.dy, this.ex, this.ey, this.fx, this.fy)
     }
 
     /**

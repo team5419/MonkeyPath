@@ -13,22 +13,16 @@ let animating = false;
 const zoom = 3
 
 const fieldWidth = 50; //feet
-const width = 5670/zoom; // pixels
-const pixelsPerFoot = width / fieldWidth
-
-console.log(pixelsPerFoot)
- 
-
-
-// const fieldWidth = 892.91339/zoom///3/3.281; // meters
-const fieldHeight = 360; // feet
+const fieldHeight = 27; // feet
 const topX = 52; const topY = 30;
+
+const width = 5670/zoom; // pixels
 const height = 2286/zoom; // pixels
 const xOffset = 0;
-const yOffset = 180;
+const yOffset = 0;
 
-const robotWidth = 22.01; // inches
-const robotHeight = 27.47; // inches
+const robotWidth = 1; // meters
+const robotHeight = 1; // meters
 
 const waypointRadius = 7;
 const splineWidth = 2;
@@ -193,9 +187,9 @@ function drawSplines(fill, animate) {
       const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
 
       const previous = ctx.globalCompositeOperation;
-      fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
+      // fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
       ctx.globalCompositeOperation = 'source-over';
-      drawRobot(splinePoint, splinePoint.rotation.getRadians());
+      // drawRobot(splinePoint, splinePoint.rotation.getRadians());
       splinePoint.draw(false, splineWidth, ctx);
       ctx.globalCompositeOperation = previous;
 
@@ -203,13 +197,13 @@ function drawSplines(fill, animate) {
     }, 25);
   } else {
     splinePoints.forEach((splinePoint) => {
-      splinePoint.draw(false, splineWidth, ctx);
+      // splinePoint.draw(false, splineWidth, ctx);
       
       if (fill) {
         const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
-        fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
+        // fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
       } else {
-        drawRobot(splinePoint, splinePoint.rotation.getRadians());
+        // drawRobot(splinePoint, splinePoint.rotation.getRadians());
       }
       i++;
     });
@@ -247,18 +241,18 @@ function update() {
     if (isNaN(heading)) {
       heading = 0;
     }
-    const comment = ($($($(this).children()).children()[3]).val());
-    const enabled = ($($($(this).children()).children()[4]).prop('checked'));
-
+    const enabled = ($($($(this).children()).children()[3]).prop('checked'));
+    
     heading = heading / 180 * Math.PI
-
+    
     if (enabled) {
-      waypoint = new Pose2d(new Translation2d(x, y), Rotation2d.fromRadians(heading), comment)
+      waypoint = new Pose2d(new Translation2d(x, y), Rotation2d.fromRadians(heading), $(this))
       tempPoints.push(waypoint);
     }
 
     waypoints = tempPoints
   });
+
 
   draw(1);
 
@@ -275,7 +269,6 @@ function update() {
     }
   })
 
-  console.log('generated path');
 
   splinePoints.pop();
 
@@ -321,12 +314,12 @@ function init() {
   ctx.canvas.height = height;
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = '#FF0000';
-
+  
   ctxBackground = document.getElementById('background').getContext('2d');
   ctxBackground.canvas.width = width;
   ctxBackground.canvas.height = height;
   ctx.clearRect(0, 0, width, height);
-
+  
   image = new Image();
   image.src = 'img/field.png';
   image.onload = function () {
@@ -337,55 +330,39 @@ function init() {
   imageFlipped.src = 'img/fieldFlipped.png';
   rebind();
 
+  const rect = canvases[0].getBoundingClientRect();
+  
   function getMousePos(event){
-    let rect = canvases[0].getBoundingClientRect();
     let x = (event.clientX - rect.left) / (rect.right - rect.left) * fieldWidth;
-    return x
+    let y = (event.clientY - rect.bottom) / (rect.top - rect.bottom) * fieldHeight;
+
+    return new Translation2d(x,y)
   }
 
   canvases.mousedown((event) => {
-    
-    dragingPoint = waypoints[0]
-    
+    update()
+        
     // mousePoint = new Translation2d(event.clientX, event.clientY)
-    console.log(event.clientX, event.clientY);
-    console.log(getFieldCoords(event.clientX, event.clientY))
+    let point = getMousePos(event)
     waypoints.forEach( (waypoint) => {
-      if( Math.abs(x - waypoint.translation.x) < 5) {
+      if( point.distance(waypoint) < 5) {
         dragingPoint = waypoint;
-        console.log(dragingPoint)
+        console.log(`dragging ${dragingPoint}`)
       }
     })
-    console.log(waypoints[0].translation.x, waypoints[0].translation.y )
   })
   canvases.mouseup(() => {dragingPoint = null})
   canvases.mouseleave(() => {dragingPoint = null})
   canvases.mousemove((event) => {
     if(!dragingPoint) return;
-    dragingPoint.x = getMousePos(event)
-    
-    
-    // let y = event.clientY - rect.top;
-    // console.log(x)
-    // x = (x - 330) / width * fieldWidth;
-    // let mousePoint = new Translation2d(x, y)
-    // console.log(x)
+    let point = getMousePos(event)
+    dragingPoint.setPoint(Math.round(point.x),Math.round(point.y),null)
+    update()
   });
 }
 
 function getFieldCoords(x,y){
   return new Translation2d(x / width*fieldWidth + xOffset, y / height * fieldHeight + yOffset)
-}
-
-function movePoint(x,y){
-  console.log(waypoints)
-  click = new Translation2d(x,y)
-  waypoints.forEach((point) => {
-    console.log(x, y, point.translation.drawX, point.translation.drawY)
-    if(Math.hypot(x - point.drawX, y - point.drawY) < clickToleranceRadius){
-      dragingPoint = point
-    }
-  })
 }
 
 let flipped = false;
@@ -417,24 +394,42 @@ function clear() {
  */
 
 function addPoint() {
+
+  function updatePoint(point, row) {
+
+  }
+
   let prev;
   if (waypoints.length > 0) prev = waypoints[waypoints.length - 1].translation;
   else prev = new Translation2d(20, 20);
-  var newFieldCoords = getFullCoords(prev.x + 50, prev.y + 50);
 
-  $('#canvases').append(
-    `${"<span class = 'dot' style={left: " +
-    newFieldCoords[0] + "; top: " +
-    newFieldCoords[1] +  ">" + "</span>"}`
-  );
+  let xInput =        $(`<input type='number' value='${prev.x + 5}'>`)
+  let yInput =        $(`<input type='number' value='${prev.y + 5}'>`)
+  let headingInput =  $(`<input type=\'number\' value=\'0\'>`)
+  let enabledInput =  $(`<input type=\'checkbox\' checked>`)
+  let deleteInput =   $('<button>&times;</button>');
 
-  $('tbody').append(`${'<tr>' + "<td class='drag_handler'></td>"
-        + "<td class='x'><input type='number' value='"}${prev.x + 50}'></td>`
-        + `<td class='y'><input type='number' value='${prev.y + 50}'></td>`
-        + '<td class=\'heading\'><input type=\'number\' value=\'0\'></td>'
-        + '<td class=\'comments\'><input type=\'search\' placeholder=\'Comments\'></td>'
-        + '<td class=\'enabled\'><input type=\'checkbox\' checked></td>'
-        + '<td class=\'delete\'><button onclick=\'$(this).parent().parent().remove();update()\'>&times;</button></td></tr>');
+  deleteInput.click((event) => {
+    console.log('click', event)
+    $(this).parent().parent().remove();
+    update()
+    xInput.change();
+  })
+
+  xInput.change((event) => {
+    console.log("change")
+    console.log(event)
+    // updatePoint(0, $(this).parent().parent())
+  })
+
+  tr = $(`${'<tr>' + "<td class='drag_handler'></td></tr>"}`)
+    .append($(`<td class='x'></td>`).append(xInput))
+    .append($(`<td class='y'></td>`).append(yInput))
+    .append($(`<td class='heading'></td>`).append(headingInput))
+    .append($(`<td class='enabled'></td>`).append(enabledInput))
+    .append($(`<td class='delete'></td>`).append(deleteInput))
+
+  $('tbody').append(tr)
   update();
   rebind();
 }

@@ -65,7 +65,8 @@ class Translation2d {
   }
 
   distance(other) {
-    return this.inverse().translateBy(other).norm();
+    return Math.hypot(this.x - other.x, this.y - other.y)
+    // return this.inverse().translateBy(other).norm();
   }
 
   draw(color, radius, ctx) {
