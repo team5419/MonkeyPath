@@ -1,6 +1,3 @@
-const xOffset = 120;
-const yOffset = 180;
-
 class Translation2d {
   constructor(x, y) {
     this.x = x;
@@ -83,11 +80,15 @@ class Translation2d {
   }
 
   get drawX() {
-    return (this.x + xOffset) * (width / fieldWidth);
+    return (this.x + xOffset) * width / fieldWidth;
   }
 
   get drawY() {
     return height - (this.y + yOffset) * (height / fieldHeight);
+  }
+
+  get drawPoint() {
+    return new Translation2d(drawX, drawY)
   }
 }
 

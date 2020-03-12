@@ -6,20 +6,26 @@ const Translation2d = require('./math/Translation2d.js');
 const Rotation2d = require('./math/Rotation2d.js');
 const QuinticHermiteSpline = require('./math/QuinticHermiteSpline.js');
 
-let waypoints = [];
-let splinePoints = [];
-let velocities = [];
-let ctx;
-let ctxBackground;
-let image;
-let imageFlipped;
-let wto;
+let waypoints = []; let imagePoints = []; let splinePoints = []; let velocities = [];
+let ctx, ctxBackground, image, imageFlipped, wto, dragingPoint;
 let animating = false;
 
-const fieldWidth = 886; // inches
-const fieldHeight = 360; // inches
-const width = 5670/3; // pixels
-const height = 2286/3; // pixels
+const zoom = 3
+
+const fieldWidth = 50; //feet
+const width = 5670/zoom; // pixels
+const pixelsPerFoot = width / fieldWidth
+
+console.log(pixelsPerFoot)
+ 
+
+
+// const fieldWidth = 892.91339/zoom///3/3.281; // meters
+const fieldHeight = 360; // feet
+const topX = 52; const topY = 30;
+const height = 2286/zoom; // pixels
+const xOffset = 0;
+const yOffset = 180;
 
 const robotWidth = 22.01; // inches
 const robotHeight = 27.47; // inches
@@ -28,6 +34,7 @@ const waypointRadius = 7;
 const splineWidth = 2;
 const pi = Math.PI;
 const pointsPerSpline = 100;
+const clickToleranceRadius = 30 //pixels
 
 /**
  * Converts coordinates relative to the full picture to coordinates relative to field
@@ -36,12 +43,17 @@ const pointsPerSpline = 100;
  * @param mY Y-coordinate
  * @returns coords coordinates list of x, y
  */
+function getAboluteCoords(point){
+  return new Translation2d({
 
-function getFieldCoords(mX, mY){
-  let x = mX - 162;
-  let y = -1 * mY + 256;
-  let coords = [x, y]
-  return (coords);
+  })
+}
+
+function getMousePos(evt) {
+  
+  return new Translation2d(
+    
+  );
 }
 
 /**
@@ -111,11 +123,13 @@ function draw(style) {
 function drawRobot(position, heading) {
   const h = heading;
   const angles = [h + (pi / 2) + t, h - (pi / 2) + t, h + (pi / 2) - t, h - (pi / 2) - t];
-  const points = [];
+  imagePoints = [];
   angles.forEach((angle) => {
-    const point = new Translation2d(position.translation.x + (r * Math.cos(angle)),
-      position.translation.y + (r * Math.sin(angle)));
-    points.push(point);
+    const point = new Translation2d(
+      position.translation.x + (r * Math.cos(angle)),
+      position.translation.y + (r * Math.sin(angle))
+    );
+    imagePoints.push(point);
     point.draw(Math.abs(angle - heading) < pi / 2 ? '#00AAFF' : '#0066FF', splineWidth, ctx);
   });
 }
@@ -158,8 +172,6 @@ function fillRobot(position, heading, color) {
 function drawSplines(fill, animate) {
   const maxVel = Math.max(...velocities)
   const minVel = Math.min(...velocities)
-  console.log(velocities)
-  console.log(maxVel)
   animate = animate || false;
   let i = 0;
 
@@ -179,7 +191,6 @@ function drawSplines(fill, animate) {
       // const hue = Math.round(180 * (i++ / splinePoints.length));
 
       const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
-      console.log(hue)
 
       const previous = ctx.globalCompositeOperation;
       fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
@@ -193,13 +204,14 @@ function drawSplines(fill, animate) {
   } else {
     splinePoints.forEach((splinePoint) => {
       splinePoint.draw(false, splineWidth, ctx);
-
+      
       if (fill) {
-        const hue = Math.round(180 * (velocities[i] / maxVel));
+        const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
         fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
       } else {
         drawRobot(splinePoint, splinePoint.rotation.getRadians());
       }
+      i++;
     });
   }
 }
@@ -227,7 +239,7 @@ function update() {
     return;
   }
 
-  waypoints = [];
+  tempPoints = [];
   $('tbody').children('tr').each(function () {
     const x = parseInt($($($(this).children()).children()[0]).val());
     const y = parseInt($($($(this).children()).children()[1]).val());
@@ -241,8 +253,11 @@ function update() {
     heading = heading / 180 * Math.PI
 
     if (enabled) {
-      waypoints.push(new Pose2d(new Translation2d(x, y), Rotation2d.fromRadians(heading), comment));
+      waypoint = new Pose2d(new Translation2d(x, y), Rotation2d.fromRadians(heading), comment)
+      tempPoints.push(waypoint);
     }
+
+    waypoints = tempPoints
   });
 
   draw(1);
@@ -321,6 +336,56 @@ function init() {
   imageFlipped = new Image();
   imageFlipped.src = 'img/fieldFlipped.png';
   rebind();
+
+  function getMousePos(event){
+    let rect = canvases[0].getBoundingClientRect();
+    let x = (event.clientX - rect.left) / (rect.right - rect.left) * fieldWidth;
+    return x
+  }
+
+  canvases.mousedown((event) => {
+    
+    dragingPoint = waypoints[0]
+    
+    // mousePoint = new Translation2d(event.clientX, event.clientY)
+    console.log(event.clientX, event.clientY);
+    console.log(getFieldCoords(event.clientX, event.clientY))
+    waypoints.forEach( (waypoint) => {
+      if( Math.abs(x - waypoint.translation.x) < 5) {
+        dragingPoint = waypoint;
+        console.log(dragingPoint)
+      }
+    })
+    console.log(waypoints[0].translation.x, waypoints[0].translation.y )
+  })
+  canvases.mouseup(() => {dragingPoint = null})
+  canvases.mouseleave(() => {dragingPoint = null})
+  canvases.mousemove((event) => {
+    if(!dragingPoint) return;
+    dragingPoint.x = getMousePos(event)
+    
+    
+    // let y = event.clientY - rect.top;
+    // console.log(x)
+    // x = (x - 330) / width * fieldWidth;
+    // let mousePoint = new Translation2d(x, y)
+    // console.log(x)
+  });
+}
+
+function getFieldCoords(x,y){
+  return new Translation2d(x / width*fieldWidth + xOffset, y / height * fieldHeight + yOffset)
+}
+
+function movePoint(x,y){
+  console.log(waypoints)
+  click = new Translation2d(x,y)
+  waypoints.forEach((point) => {
+    console.log(x, y, point.translation.drawX, point.translation.drawY)
+    if(Math.hypot(x - point.drawX, y - point.drawY) < clickToleranceRadius){
+      dragingPoint = point
+    }
+  })
 }
 
 let flipped = false;
@@ -357,9 +422,11 @@ function addPoint() {
   else prev = new Translation2d(20, 20);
   var newFieldCoords = getFullCoords(prev.x + 50, prev.y + 50);
 
-  $('#canvases').append(`${"<span class = 'dot' style={left: " +
-  newFieldCoords[0] + "; top: " +
-  newFieldCoords[1] +  ">" + "</span>"}`);
+  $('#canvases').append(
+    `${"<span class = 'dot' style={left: " +
+    newFieldCoords[0] + "; top: " +
+    newFieldCoords[1] +  ">" + "</span>"}`
+  );
 
   $('tbody').append(`${'<tr>' + "<td class='drag_handler'></td>"
         + "<td class='x'><input type='number' value='"}${prev.x + 50}'></td>`
