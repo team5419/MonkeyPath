@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Monkey Path</title>
+        <title>Berkeley Path</title>
 
         <link href="css/roboto.css" rel="stylesheet">
         <link href="css/sourcecodepro.css" rel="stylesheet">
@@ -27,20 +27,10 @@
                 <th>X</th>
                 <th>Y</th>
                 <th>Heading</th>
-                <th>Comments</th>
                 <th>Enabled</th>
                 <th>Delete</th>
             </thead>
-            <tbody class="dragger">
-                <tr>
-                    <td class="drag_handler"></td>
-                    <td class="x"><input type="number" value="20"></td>
-                    <td class="y"><input type="number" value="-95"></td>
-                    <td class="heading"><input type="number" value="0"></td>
-                    <td class="comments"><input type="search" placeholder="Comments"></td>
-                    <td class="enabled"><input type="checkbox" checked></td>
-                    <td class="delete"><button onclick="$(this).parent().parent().remove();update()">&times;</button></td>
-                </tr>
+            <tbody class="dragger" id="points">
             </tbody>
         </table>
     </body>

@@ -1,71 +1,35 @@
 /* eslint-disable */
-const $ = window.$ = window.jQuery = require('jQuery');
+const $ = window.$ = window.jQuery = require('jquery');
 require('jquery-ui-dist/jquery-ui');
-const PathGen = require('./PathGen.js');
-const Translation2d = require('./Translation2d.js');
-const Rotation2d = require('./Rotation2d.js');
-const Pose2d = require('./Pose2d.js');
+const Pose2d = require('./math/Pose2d.js');
+const Translation2d = require('./math/Translation2d.js');
+const Rotation2d = require('./math/Rotation2d.js');
+const QuinticHermiteSpline = require('./math/QuinticHermiteSpline.js');
 
-let waypoints = [];
-let splinePoints = [];
-let movePoints = [];
-let ctx;
-let ctxBackground;
-let image;
-let imageFlipped;
-let wto;
+let waypoints = []; let imagePoints = []; let splinePoints = []; let velocities = [];
+let ctx, ctxBackground, image, imageFlipped, wto, dragingPoint;
 let animating = false;
 
-const fieldWidth = 886; // inches
-const fieldHeight = 360; // inches
-const width = 1604; // pixels
-const height = 651; // pixels
+const zoom = 3
 
-const robotWidth = 22.01; // inches
-const robotHeight = 27.47; // inches
+const fieldWidth = 50; //feet
+const fieldHeight = 27; // feet
+const topX = 52; const topY = 30;
+
+const width = 5670/zoom; // pixels
+const height = 2286/zoom; // pixels
+const xOffset = 0;
+const yOffset = 0;
+
+const robotWidth = 2; // feet
+const robotHeight = 2; // feet
+const r = Math.sqrt((robotWidth ** 2) + (robotHeight ** 2)) / 2;
+const t = Math.atan2(robotHeight, robotWidth);
 
 const waypointRadius = 7;
 const splineWidth = 2;
 const pi = Math.PI;
-
-/**
- * Converts coordinates relative to the full picture to coordinates relative to field
- *
- * @param mX X-coordinate
- * @param mY Y-coordinate
- * @returns coords coordinates list of x, y
- */
-
-function getFieldCoords(mX, mY){
-  let x = mX - 162;
-  let y = -1 * mY + 256;
-  let coords = [x, y]
-  return (coords);
-}
-
-/**
- * Converts coordinates relative to the field to coordinates relative to full picture
- *
- * @param mX X-coordinate
- * @param mY Y-coordinate
- * @returns coordinates list of x, y
- */
-
-function getFullCoords(mX, mY){
-  let x = mX + 162;
-  let y = -1 * mY + 256;
-  let coords = [x, y]
-  return (coords);
-}
-
-function d2r(d) {
-  return d * (Math.PI / 180);
-}
-
-function r2d(r) {
-  return r * (180 / Math.PI);
-}
-
+const pointsPerSpline = 100;
 let animation;
 
 /**
@@ -89,8 +53,8 @@ function draw(style) {
     case 1:
       break;
     case 2:
-      drawSplines(true);
-      drawSplines(false);
+      drawSplines(true, false);
+      drawSplines(false, false);
       break;
     case 3:
       animate();
@@ -110,11 +74,13 @@ function draw(style) {
 function drawRobot(position, heading) {
   const h = heading;
   const angles = [h + (pi / 2) + t, h - (pi / 2) + t, h + (pi / 2) - t, h - (pi / 2) - t];
-  const points = [];
+  imagePoints = [];
   angles.forEach((angle) => {
-    const point = new Translation2d(position.translation.x + (r * Math.cos(angle)),
-      position.translation.y + (r * Math.sin(angle)));
-    points.push(point);
+    const point = new Translation2d(
+      position.translation.x + (r * Math.cos(angle)),
+      position.translation.y + (r * Math.sin(angle))
+    );
+    imagePoints.push(point);
     point.draw(Math.abs(angle - heading) < pi / 2 ? '#00AAFF' : '#0066FF', splineWidth, ctx);
   });
 }
@@ -155,6 +121,8 @@ function fillRobot(position, heading, color) {
  */
 
 function drawSplines(fill, animate) {
+  const maxVel = Math.max(...velocities)
+  const minVel = Math.min(...velocities)
   animate = animate || false;
   let i = 0;
 
@@ -162,34 +130,34 @@ function drawSplines(fill, animate) {
     clearInterval(animation);
 
     animation = setInterval(() => {
-      if (i === splinePoints.length) {
+      if (i >= splinePoints.length) {
         animating = false;
         clearInterval(animation);
         return;
       }
-
       animating = true;
-
       const splinePoint = splinePoints[i];
-      const hue = Math.round(180 * (i++ / splinePoints.length));
-
       const previous = ctx.globalCompositeOperation;
-      fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
+      // const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
+      // fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
       ctx.globalCompositeOperation = 'source-over';
       drawRobot(splinePoint, splinePoint.rotation.getRadians());
       splinePoint.draw(false, splineWidth, ctx);
       ctx.globalCompositeOperation = previous;
+
+      i++;
     }, 25);
   } else {
     splinePoints.forEach((splinePoint) => {
       splinePoint.draw(false, splineWidth, ctx);
-
-      if (fill) {
-        const hue = Math.round(180 * (i++ / splinePoints.length));
+      
+      if (false) {
+        const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
         fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
       } else {
         drawRobot(splinePoint, splinePoint.rotation.getRadians());
       }
+      i++;
     });
   }
 }
@@ -210,61 +178,44 @@ function drawWaypoints() {
  * pushes new points to waypoints and redraws the path
  * @var {Array} splinePoints generated Pose2d points
  */
-
-
 function update() {
-  if (animating) {
-    return;
-  }
-
-  waypoints = [];
-  $('tbody').children('tr').each(function () {
-    const x = parseInt($($($(this).children()).children()[0]).val());
-    const y = parseInt($($($(this).children()).children()[1]).val());
-    let heading = parseInt($($($(this).children()).children()[2]).val());
-    if (isNaN(heading)) {
-      heading = 0;
-    }
-    const comment = ($($($(this).children()).children()[3]).val());
-    const enabled = ($($($(this).children()).children()[4]).prop('checked'));
-    if (enabled) {
-      waypoints.push(new Pose2d(new Translation2d(x, y), Rotation2d.fromDegrees(heading), comment));
-    }
-  });
-
+  if (animating) { return; }
   draw(1);
-
-  splinePoints = [];
-  splinePoints = PathGen.generatePath(waypoints);
-  var printSpline = [];
-  for (i = 1; i <= splinePoints.length - 1; i++) {
-    printSpline.push(splinePoints[i].getTranslation);
+  splines = [];
+  for(i = 0; i < waypoints.length - 1; i++) {
+    splines.push(new QuinticHermiteSpline(waypoints[i], waypoints[i+1]))
   }
-  console.log('generated path');
-  console.log(printSpline);
-
+  splinePoints = [];
+  splines.forEach(spline => {
+    for(i = 0.0; i < 1; i += 1/pointsPerSpline){
+      velocities.push(spline.getVelocity(i))
+      splinePoints.push(new Pose2d(spline.getPoint(i), Rotation2d.fromRadians(spline.getHeading(i))))
+    }
+  })
   splinePoints.pop();
-
   draw(2);
 }
-
-
-const r = Math.sqrt((robotWidth ** 2) + (robotHeight ** 2)) / 2;
-const t = Math.atan2(robotHeight, robotWidth);
 
 /**
  * Delays before updating
  */
-
 function rebind() {
   const change = 'propertychange change click keyup input paste';
   const input = $('input');
   input.unbind(change);
-  input.bind(change, () => {
+  input.bind(change, (event) => {
     clearTimeout(wto);
     wto = setTimeout(() => {
+      // update();
+      let row = $(event.target).parent().parent()
+      let waypoint = waypoints[parseInt(row.attr('id'))]
+      waypoint.setPoint(
+        parseInt($(row.children()[1].firstChild).val()),
+        parseInt($(row.children()[2].firstChild).val()),
+        parseInt($(row.children()[3].firstChild).val())
+      );
       update();
-    }, 500);
+    }, 250);
   });
 }
 
@@ -287,12 +238,12 @@ function init() {
   ctx.canvas.height = height;
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = '#FF0000';
-
+  
   ctxBackground = document.getElementById('background').getContext('2d');
   ctxBackground.canvas.width = width;
   ctxBackground.canvas.height = height;
   ctx.clearRect(0, 0, width, height);
-
+  
   image = new Image();
   image.src = 'img/field.png';
   image.onload = function () {
@@ -302,6 +253,51 @@ function init() {
   imageFlipped = new Image();
   imageFlipped.src = 'img/fieldFlipped.png';
   rebind();
+  addPoint()
+  
+  
+  handleDragging(canvases)
+}
+
+function handleDragging(canvases) {
+  var rect = canvases[0].getBoundingClientRect();
+  var dragingPoint, xInput, yInput;
+
+  function getMousePos(event) {
+    let x = (event.clientX - rect.left) / (rect.right - rect.left) * fieldWidth;
+    let y = (event.clientY - rect.bottom) / (rect.top - rect.bottom) * fieldHeight;
+    return new Translation2d(x,y)
+  }
+
+  canvases.mousedown((event) => {
+    let point = getMousePos(event)
+    rect = canvases[0].getBoundingClientRect();
+    for(i = 0; i < waypoints.length; i++) {
+      if( point.distance(waypoints[i]) < 5 ) {
+        dragingPoint = waypoints[i];
+        let row = $($('#points').children()[i]);
+        xInput = $(row.children()[1].firstChild);
+        yInput = $(row.children()[2].firstChild);
+        return;
+      }
+    }
+  })
+
+  canvases.mouseup(() => {dragingPoint = null})
+  canvases.mouseleave(() => {dragingPoint = null})
+  canvases.mousemove((event) => {
+    if(!dragingPoint) return;
+    let point = getMousePos(event);
+    point.set(Math.round(point.x), Math.round(point.y), null);
+    dragingPoint.setPoint(point.x, point.y, null);
+    xInput.val(point.x);
+    yInput.val(point.y);
+    update();
+  });
+}
+
+function getFieldCoords(x,y){
+  return new Translation2d(x / width*fieldWidth + xOffset, y / height * fieldHeight + yOffset)
 }
 
 let flipped = false;
@@ -333,25 +329,36 @@ function clear() {
  */
 
 function addPoint() {
+
   let prev;
   if (waypoints.length > 0) prev = waypoints[waypoints.length - 1].translation;
-  else prev = new Translation2d(20, 20);
-  var newFieldCoords = getFullCoords(prev.x + 50, prev.y + 50);
+  else prev = new Translation2d(0, 0);
 
-  $('#canvases').append(`${"<span class = 'dot' style={left: " +
-  newFieldCoords[0] + "; top: " +
-  newFieldCoords[1] +  ">" + "</span>"}`);
+  let point = new Pose2d(new Translation2d(prev.x + 5, prev.y + 5), Rotation2d.fromDegrees(0))
+  waypoints.push(point)
 
-  $('tbody').append(`${'<tr>' + "<td class='drag_handler'></td>"
-        + "<td class='x'><input type='number' value='"}${prev.x + 50}'></td>`
-        + `<td class='y'><input type='number' value='${prev.y + 50}'></td>`
-        + '<td class=\'heading\'><input type=\'number\' value=\'0\'></td>'
-        + '<td class=\'comments\'><input type=\'search\' placeholder=\'Comments\'></td>'
-        + '<td class=\'enabled\'><input type=\'checkbox\' checked></td>'
-        + '<td class=\'delete\'><button onclick=\'$(this).parent().parent().remove();update()\'>&times;</button></td></tr>');
+  let xInput =        $(`<input type='number' value='${point.x}'>`)
+  let yInput =        $(`<input type='number' value='${point.y}'>`)
+  let headingInput =  $(`<input type=\'number\' value=\'0\'>`)
+  let enabledInput =  $(`<input type=\'checkbox\' checked>`)
+  let deleteInput =   $('<button>&times;</button>');
+
+  deleteInput.click((event) => {
+    waypoints.splice([parseInt($(event.target).parent().parent().attr('id'))]);
+    $(event.currentTarget).parent().parent().remove();
+    update()
+  })
+
+  tr = $(`<tr id=${waypoints.length-1}>` + `<td class='drag_handler'></td></tr>`)
+    .append($(`<td class='x'></td>`).append(xInput))
+    .append($(`<td class='y'></td>`).append(yInput))
+    .append($(`<td class='heading'></td>`).append(headingInput))
+    .append($(`<td class='enabled'></td>`).append(enabledInput))
+    .append($(`<td class='delete'></td>`).append(deleteInput))
+
+  $('tbody').append(tr)
   update();
   rebind();
 }
-
 
 $(window).ready(init);
