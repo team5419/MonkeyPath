@@ -29,8 +29,7 @@ const t = Math.atan2(robotHeight, robotWidth);
 const waypointRadius = 7;
 const splineWidth = 2;
 const pi = Math.PI;
-const pointsPerSpline = 50;
-const clickToleranceRadius = 30 //pixels
+const pointsPerSpline = 100;
 let animation;
 
 /**
@@ -54,8 +53,8 @@ function draw(style) {
     case 1:
       break;
     case 2:
-      drawSplines(true);
-      drawSplines(false);
+      drawSplines(true, false);
+      drawSplines(false, false);
       break;
     case 3:
       animate();
@@ -136,15 +135,10 @@ function drawSplines(fill, animate) {
         clearInterval(animation);
         return;
       }
-
       animating = true;
-
       const splinePoint = splinePoints[i];
-      // const hue = Math.round(180 * (i++ / splinePoints.length));
-
-      // const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
-
       const previous = ctx.globalCompositeOperation;
+      // const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
       // fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
       ctx.globalCompositeOperation = 'source-over';
       drawRobot(splinePoint, splinePoint.rotation.getRadians());
@@ -157,9 +151,9 @@ function drawSplines(fill, animate) {
     splinePoints.forEach((splinePoint) => {
       splinePoint.draw(false, splineWidth, ctx);
       
-      if (fill) {
-        // const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
-        // fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
+      if (false) {
+        const hue = Math.round(180 * (-velocities[i] + maxVel) / (maxVel - minVel));
+        fillRobot(splinePoint, splinePoint.rotation.getRadians(), `hsla(${hue}, 100%, 50%, 0.025)`);
       } else {
         drawRobot(splinePoint, splinePoint.rotation.getRadians());
       }
@@ -186,12 +180,12 @@ function drawWaypoints() {
  */
 function update() {
   if (animating) { return; }
-  // draw(1);
-  splinePoints = [];
+  draw(1);
+  splines = [];
   for(i = 0; i < waypoints.length - 1; i++) {
     splines.push(new QuinticHermiteSpline(waypoints[i], waypoints[i+1]))
   }
-  splines = [];
+  splinePoints = [];
   splines.forEach(spline => {
     for(i = 0.0; i < 1; i += 1/pointsPerSpline){
       velocities.push(spline.getVelocity(i))
@@ -266,8 +260,7 @@ function init() {
 }
 
 function handleDragging(canvases) {
-  const rect = canvases[0].getBoundingClientRect();
-
+  var rect = canvases[0].getBoundingClientRect();
   var dragingPoint, xInput, yInput;
 
   function getMousePos(event) {
@@ -278,14 +271,13 @@ function handleDragging(canvases) {
 
   canvases.mousedown((event) => {
     let point = getMousePos(event)
+    rect = canvases[0].getBoundingClientRect();
     for(i = 0; i < waypoints.length; i++) {
-
       if( point.distance(waypoints[i]) < 5 ) {
         dragingPoint = waypoints[i];
         let row = $($('#points').children()[i]);
-        xInput = $(row.children()[1]);
-        yInput = $(row.children()[2]);
-        console.log(xInput, yInput)
+        xInput = $(row.children()[1].firstChild);
+        yInput = $(row.children()[2].firstChild);
         return;
       }
     }
@@ -298,10 +290,8 @@ function handleDragging(canvases) {
     let point = getMousePos(event);
     point.set(Math.round(point.x), Math.round(point.y), null);
     dragingPoint.setPoint(point.x, point.y, null);
-    console.log(point.x, point.y)
     xInput.val(point.x);
     yInput.val(point.y);
-    console.log(xInput.val(), yInput.val())
     update();
   });
 }
@@ -354,7 +344,7 @@ function addPoint() {
   let deleteInput =   $('<button>&times;</button>');
 
   deleteInput.click((event) => {
-    let waypoint = waypoints[parseInt(row.attr('id'))]
+    waypoints.splice([parseInt($(event.target).parent().parent().attr('id'))]);
     $(event.currentTarget).parent().parent().remove();
     update()
   })
