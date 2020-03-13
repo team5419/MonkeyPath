@@ -30,18 +30,9 @@
                 <th>Enabled</th>
                 <th>Delete</th>
             </thead>
-            <tbody class="dragger">
-                <tr>
-                    <td class="drag_handler"></td>
-                    <td class="x"><input type="number" value="20"></td>
-                    <td class="y"><input type="number" value="10"></td>
-                    <td class="heading"><input type="number" value="0"></td>
-                    <td class="enabled"><input type="checkbox" checked></td>
-                    <td class="delete"><button onclick="$(this).parent().parent().remove();update()">&times;</button></td>
-                </tr>
+            <tbody class="dragger" id="points">
             </tbody>
         </table>
-        <div id='test'></div>
     </body>
 </html>
 <script>if (typeof module === "object") {window.module = module; module = undefined;}</script>

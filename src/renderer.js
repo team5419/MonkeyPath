@@ -23,56 +23,14 @@ const yOffset = 0;
 
 const robotWidth = 2; // feet
 const robotHeight = 2; // feet
+const r = Math.sqrt((robotWidth ** 2) + (robotHeight ** 2)) / 2;
+const t = Math.atan2(robotHeight, robotWidth);
 
 const waypointRadius = 7;
 const splineWidth = 2;
 const pi = Math.PI;
 const pointsPerSpline = 50;
 const clickToleranceRadius = 30 //pixels
-
-/**
- * Converts coordinates relative to the full picture to coordinates relative to field
- *
- * @param mX X-coordinate
- * @param mY Y-coordinate
- * @returns coords coordinates list of x, y
- */
-function getAboluteCoords(point){
-  return new Translation2d({
-
-  })
-}
-
-function getMousePos(evt) {
-  
-  return new Translation2d(
-    
-  );
-}
-
-/**
- * Converts coordinates relative to the field to coordinates relative to full picture
- *
- * @param mX X-coordinate
- * @param mY Y-coordinate
- * @returns coordinates list of x, y
- */
-
-function getFullCoords(mX, mY){
-  let x = mX + 162;
-  let y = -1 * mY + 256;
-  let coords = [x, y]
-  return (coords);
-}
-
-function d2r(d) {
-  return d * (Math.PI / 180);
-}
-
-function r2d(r) {
-  return r * (180 / Math.PI);
-}
-
 let animation;
 
 /**
@@ -226,72 +184,44 @@ function drawWaypoints() {
  * pushes new points to waypoints and redraws the path
  * @var {Array} splinePoints generated Pose2d points
  */
-
-
 function update() {
-  if (animating) {
-    return;
-  }
-
-  tempPoints = [];
-  $('tbody').children('tr').each(function () {
-    const x = parseInt($($($(this).children()).children()[0]).val());
-    const y = parseInt($($($(this).children()).children()[1]).val());
-    let heading = parseInt($($($(this).children()).children()[2]).val());
-    if (isNaN(heading)) {
-      heading = 0;
-    }
-    const enabled = ($($($(this).children()).children()[3]).prop('checked'));
-    
-    heading = heading / 180 * Math.PI
-    
-    if (enabled) {
-      waypoint = new Pose2d(new Translation2d(x, y), Rotation2d.fromRadians(heading), $(this))
-      tempPoints.push(waypoint);
-    }
-
-    waypoints = tempPoints
-  });
-
-
-  draw(1);
-
+  if (animating) { return; }
+  // draw(1);
   splinePoints = [];
-  splines = [];
   for(i = 0; i < waypoints.length - 1; i++) {
     splines.push(new QuinticHermiteSpline(waypoints[i], waypoints[i+1]))
   }
-
+  splines = [];
   splines.forEach(spline => {
     for(i = 0.0; i < 1; i += 1/pointsPerSpline){
       velocities.push(spline.getVelocity(i))
       splinePoints.push(new Pose2d(spline.getPoint(i), Rotation2d.fromRadians(spline.getHeading(i))))
     }
   })
-
-
   splinePoints.pop();
-
   draw(2);
 }
-
-
-const r = Math.sqrt((robotWidth ** 2) + (robotHeight ** 2)) / 2;
-const t = Math.atan2(robotHeight, robotWidth);
 
 /**
  * Delays before updating
  */
-
 function rebind() {
   const change = 'propertychange change click keyup input paste';
   const input = $('input');
   input.unbind(change);
-  input.bind(change, () => {
+  input.bind(change, (event) => {
     clearTimeout(wto);
     wto = setTimeout(() => {
+      // update();
+      let row = $(event.target).parent().parent()
+      let waypoint = waypoints[parseInt(row.attr('id'))]
+      waypoint.setPoint(
+        parseInt($(row.children()[1].firstChild).val()),
+        parseInt($(row.children()[2].firstChild).val()),
+        parseInt($(row.children()[3].firstChild).val())
+      );
       update();
-    }, 500);
+    }, 250);
   });
 }
 
@@ -329,9 +259,17 @@ function init() {
   imageFlipped = new Image();
   imageFlipped.src = 'img/fieldFlipped.png';
   rebind();
-
-  const rect = canvases[0].getBoundingClientRect();
+  addPoint()
   
+  
+  handleDragging(canvases)
+}
+
+function handleDragging(canvases) {
+  const rect = canvases[0].getBoundingClientRect();
+
+  var dragingPoint, xInput, yInput;
+
   function getMousePos(event) {
     let x = (event.clientX - rect.left) / (rect.right - rect.left) * fieldWidth;
     let y = (event.clientY - rect.bottom) / (rect.top - rect.bottom) * fieldHeight;
@@ -339,24 +277,32 @@ function init() {
   }
 
   canvases.mousedown((event) => {
-    update()
-        
-    // mousePoint = new Translation2d(event.clientX, event.clientY)
     let point = getMousePos(event)
-    waypoints.forEach( (waypoint) => {
-      if( point.distance(waypoint) < 5) {
-        dragingPoint = waypoint;
-        console.log(`dragging ${dragingPoint}`)
+    for(i = 0; i < waypoints.length; i++) {
+
+      if( point.distance(waypoints[i]) < 5 ) {
+        dragingPoint = waypoints[i];
+        let row = $($('#points').children()[i]);
+        xInput = $(row.children()[1]);
+        yInput = $(row.children()[2]);
+        console.log(xInput, yInput)
+        return;
       }
-    })
+    }
   })
+
   canvases.mouseup(() => {dragingPoint = null})
   canvases.mouseleave(() => {dragingPoint = null})
   canvases.mousemove((event) => {
     if(!dragingPoint) return;
-    let point = getMousePos(event)
-    dragingPoint.setPoint(Math.round(point.x),Math.round(point.y),null)
-    update()
+    let point = getMousePos(event);
+    point.set(Math.round(point.x), Math.round(point.y), null);
+    dragingPoint.setPoint(point.x, point.y, null);
+    console.log(point.x, point.y)
+    xInput.val(point.x);
+    yInput.val(point.y);
+    console.log(xInput.val(), yInput.val())
+    update();
   });
 }
 
@@ -394,34 +340,26 @@ function clear() {
 
 function addPoint() {
 
-  function updatePoint(point, row) {
-
-  }
-
   let prev;
   if (waypoints.length > 0) prev = waypoints[waypoints.length - 1].translation;
-  else prev = new Translation2d(20, 20);
+  else prev = new Translation2d(0, 0);
 
-  let xInput =        $(`<input type='number' value='${prev.x + 5}'>`)
-  let yInput =        $(`<input type='number' value='${prev.y + 5}'>`)
+  let point = new Pose2d(new Translation2d(prev.x + 5, prev.y + 5), Rotation2d.fromDegrees(0))
+  waypoints.push(point)
+
+  let xInput =        $(`<input type='number' value='${point.x}'>`)
+  let yInput =        $(`<input type='number' value='${point.y}'>`)
   let headingInput =  $(`<input type=\'number\' value=\'0\'>`)
   let enabledInput =  $(`<input type=\'checkbox\' checked>`)
   let deleteInput =   $('<button>&times;</button>');
 
   deleteInput.click((event) => {
-    console.log('click', event)
-    $(this).parent().parent().remove();
+    let waypoint = waypoints[parseInt(row.attr('id'))]
+    $(event.currentTarget).parent().parent().remove();
     update()
-    xInput.change();
   })
 
-  xInput.change((event) => {
-    console.log("change")
-    console.log(event)
-    // updatePoint(0, $(this).parent().parent())
-  })
-
-  tr = $(`${'<tr>' + "<td class='drag_handler'></td></tr>"}`)
+  tr = $(`<tr id=${waypoints.length-1}>` + `<td class='drag_handler'></td></tr>`)
     .append($(`<td class='x'></td>`).append(xInput))
     .append($(`<td class='y'></td>`).append(yInput))
     .append($(`<td class='heading'></td>`).append(headingInput))

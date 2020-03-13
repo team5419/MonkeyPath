@@ -15,7 +15,7 @@ class Rotation2d {
   }
 
   static fromDegrees(angleDegrees) {
-    return this.fromRadians(d2r(angleDegrees));
+    return this.fromRadians(angleDegrees / 180 * Math.PI);
   }
 
   normalizeFunc() {
@@ -44,7 +44,7 @@ class Rotation2d {
   }
 
   getDegrees() {
-    return r2d(this.getRadians());
+    return this.getRadians() / Math.PI * 180;
   }
 
   rotateBy(other) {

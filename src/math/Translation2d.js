@@ -80,6 +80,11 @@ class Translation2d {
     ctx.stroke();
   }
 
+  set(x,y){
+    this.x = x || this.x;
+    this.y = y || this.y;
+  }
+
   get drawX() {
     return (this.x + xOffset) * width / fieldWidth;
   }

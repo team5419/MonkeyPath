@@ -1,8 +1,7 @@
 class Pose2d {
-  constructor(translation, rotation, row) {
+  constructor(translation, rotation) {
     this.translation = translation;
     this.rotation = rotation;
-    this.row = row;
   }
   
   get getTranslation() {
@@ -60,9 +59,8 @@ class Pose2d {
     this.x = x || this.x;
     this.y = y || this.y;
     this.heading = heading || this.heading;
-    $($(this.row.children()[1]).children()[0]).val(this.x)
-    console.log($($(this.row.children()[2]).children()[0]))
-    $($(this.row.children()[2]).children()[0]).val(this.y)
+    // $($(this.row.children()[1]).children()[0]).val(this.x);
+    // $($(this.row.children()[2]).children()[0]).val(this.y);
   }
 
   toString() {
@@ -75,21 +73,13 @@ class Pose2d {
     this.rotation.rotate(other.rotation);
   }
 
-  get x() {
-    return this.translation.x;
-  }
+  get x() { return this.translation.x; }
+  get y() { return this.translation.y; }
+  get heading() { return this.rotation.getDegrees(); }
 
-  get y(){
-    return this.translation.y;
-  }
-
-  set x(val){
-    this.translation.x = val;
-  }
-
-  set y(val){
-    this.translation.y = val;
-  }
+  set x(val){ this.translation.x = val; }
+  set y(val){ this.translation.y = val; }
+  set heading(val) {this.rotation = Rotation2d.fromDegrees(val)}
 }
 
 module.exports = Pose2d;
