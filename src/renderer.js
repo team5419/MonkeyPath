@@ -344,7 +344,8 @@ function addPoint() {
   let deleteInput =   $('<button>&times;</button>');
 
   deleteInput.click((event) => {
-    waypoints.splice([parseInt($(event.target).parent().parent().attr('id'))]);
+    index = parseInt($(event.target).parent().parent().attr('id'))
+    waypoints.splice(index, 1);
     $(event.currentTarget).parent().parent().remove();
     update()
   })

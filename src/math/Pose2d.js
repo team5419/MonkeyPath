@@ -32,7 +32,6 @@ class Pose2d {
   }
   
   distance(other) {
-    console.log(other, this)
     return Math.hypot(this.translation.x - other.translation.x, this.translation.y - other.translation.y)
   }
 
